@@ -16,6 +16,7 @@
 module RedBlackTree where
 
 open import Data.Bool hiding (T)
+open import Data.Nat hiding (_<_)
 
 data Order : Set where
   LT EQ GT : Order
@@ -27,18 +28,22 @@ record Ord (A : Set) : Set where
 data Color : Set where
   R B : Color
 
-data Tree (A : Set) : Set where
-  E : Tree A
-  T : Color → Tree A → A → Tree A → Tree A
+extraHeight : Color → ℕ → ℕ
+extraHeight R h = h
+extraHeight B h = suc h
+
+data Tree (A : Set) : ℕ → Set where
+  E : Tree A 0
+  T : (c : Color){h : ℕ} → Tree A h → A → Tree A h → Tree A (extraHeight c h)
 
 -- Simple Set Operations
-set : Set → Set
-set A = Tree A
+set : Set → {height : ℕ} → Set
+set A {h} = Tree A h
 
 empty : ∀{A} → set A
 empty = E
 
-member : ∀{A}⦃ ord : Ord A ⦄ → A → set A → Bool
+member : ∀{A h}⦃ ord : Ord A ⦄ → A → set A {h} → Bool
 member x E = false
 member ⦃ ord ⦄ x (T _ a y b) with Ord._<_ ord x y
 ... | LT = member x a
@@ -46,7 +51,8 @@ member ⦃ ord ⦄ x (T _ a y b) with Ord._<_ ord x y
 ... | GT = member x b
 
 -- Insertion
-balance : ∀{A} → Color → set A → A → set A → set A
+balance : ∀{A h} → (c : Color) → set A {h} → A → set A {h}
+            → set A {extraHeight c h}
 balance B (T R (T R a x b) y c) z d = T R (T B a x b) y (T B c z d)
 balance B (T R a x (T R b y c)) z d = T R (T B a x b) y (T B c z d)
 balance B a x (T R (T R b y c) z d) = T R (T B a x b) y (T B c z d)
