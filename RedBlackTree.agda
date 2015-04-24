@@ -15,15 +15,7 @@
 -}
 module RedBlackTree where
 
-open import Data.Bool hiding (if_then_else_) renaming (T to So; not to ¬)
-_⇒_ : Set → Set → Set
-P ⇒ T = {{p : P}} → T
-infixr 3 _⇒_
-
-if_then_else_ : ∀{A} b → (So b ⇒ A) → (So (¬ b) ⇒ A) → A
-if true  then t else f = t
-if false then t else f = f
-
+open import Data.Bool renaming (T to So; not to ¬)
 open import Data.Nat hiding (_<_)
 
 data Order : Set where
@@ -33,65 +25,67 @@ record Ord (A : Set) : Set where
   field
     _<_ : A → A → Order
 
-
 data Color : Set where
   R B : Color
 
-Height = ℕ
+tooRed : Color → Color → Bool
+tooRed R R = true
+tooRed _ _ = false
 
-data Type : Set where
-  RB IR : Type
+data Tree (A : Set) : Color → Set where
+  E : Tree A B
+  T : ∀{cl cr}(c : Color)
+      → Tree A cl → {_ : So (¬ (tooRed c cl))}
+      → A
+      → Tree A cr → {_ : So (¬ (tooRed c cr))}
+        → Tree A c
 
-cType : Color → Color → Type
-cType B B = RB
-cType _ _ = IR
-
-data Tree (A : Set) : Color → Height → Type → Set where
-  E : Tree A B 0 RB
-  R : ∀{cl cr h} → Tree A cl h RB → A → Tree A cr h RB
-        → Tree A R h (cType cl cr)
-  B : ∀{cl cr h} → Tree A cl h RB → A → Tree A cr h RB
-        → Tree A B (suc h) RB
-  
 -- Simple Set Operations
-set : ∀{c h ty} → Set → Set
-set {c}{h}{ty} A = Tree A c h ty
+set : ∀{c} → Set → Set
+set {c} A = Tree A c
 
 empty : ∀{A} → set A
 empty = E
 
-member : ∀{A c h ty}{{ord : Ord A}} → A → set {c}{h}{ty} A → Bool
+member : ∀{A c}⦃ ord : Ord A ⦄ → A → set {c} A → Bool
 member x E = false
-member {{ord}} x (R a y b) with Ord._<_ ord x y
-... | LT = member x a
-... | EQ = true
-... | GT = member x b
-member {{ord}} x (B a y b) with Ord._<_ ord x y
+member ⦃ ord ⦄ x (T _ a y b) with Ord._<_ ord x y
 ... | LT = member x a
 ... | EQ = true
 ... | GT = member x b
 
 -- Insertion
-balance : ∀{A cl cr h tyl tyr}
-          → (c : Color) → set {cl}{h}{tyl} A → A → set {cr}{h}{tyr} A
-            → set {c}{h}{RB} A
-balance B (R (R a x b) y c) z d = R (B a x b) y (B c z d)
-balance B (R a x (R b y c)) z d = R (B a x b) y (B c z d)
-balance B a x (R (R b y c) z d) = R (B a x b) y (B c z d)
-balance B a x (R b y (R c z d)) = R (B a x b) y (B c z d)
-balance B a x b = B a x b
-balance R a x b = R a x b
+resultColor : ∀{A cl cr} → Color → set {cl} A → set {cr} A → Color
+resultColor B (T R (T R _ _ _) _ _) _ = R
+resultColor B (T R _ _ (T R _ _ _)) _ = R
+resultColor B _ (T R (T R _ _ _) _ _) = R
+resultColor B _ (T R _ _ (T R _ _ _)) = R
+resultColor B _ _ = B
+resultColor R _ _ = R
 
--- insert : ∀{A}{{ord : Ord A}} → A → set A → set A
--- insert {A} {{ord}} x s = blacken (ins s)
---   where
---     ins : set A → set A
---     ins E = T R E x E
---     ins (T color a y b) with Ord._<_ ord x y
---     ... | LT = balance color (ins a) y b
---     ... | EQ = T color a y b
---     ... | GT = balance color a y (ins b)
+balance : ∀{A cl cr} → (c : Color) → (tl : set {cl} A) → A → (tr : set {cr} A)
+            → set {resultColor c tl tr} A
+balance B (T R (T R a x b) y c) z d = T R (T B a x b) y (T B c z d)
+balance B (T R (T B a₁ a₂ a₃) x (T R b y c)) z d = T R (T B (T B a₁ a₂ a₃) x b) y (T B c z d)
+balance B (T B a₁ a₂ a₃) x (T R (T R b y c) z d) =
+  T R (T B (T B a₁ a₂ a₃) x b) y (T B c z d)
+balance B (T R (T B a₁₁ a₁₂ a₁₃) a₂ (T B a₃₁ a₃₂ a₃₃)) x (T R (T R b y c) z d) =
+  T R (T B ? x b) y (T B c z d)b
+balance B a x (T R b y (T R c z d)) =
+  T R (T B a x b) y (T B c z d)
+balance B a x b = T B a x b
+balance R a x b = T R a x b
+
+insert : ∀{A}⦃ ord : Ord A ⦄ → A → set A → set A
+insert {A} ⦃ ord ⦄ x s = blacken (ins s)
+  where
+    ins : set A → set A
+    ins E = T R E x E
+    ins (T color a y b) with Ord._<_ ord x y
+    ... | LT = balance color (ins a) y b
+    ... | EQ = T color a y b
+    ... | GT = balance color a y (ins b)
     
---     blacken : set A → set A
---     blacken E = E
---     blacken (T _ a y b) = T B a y b
+    blacken : set A → set A
+    blacken E = E
+    blacken (T _ a y b) = T B a y b
