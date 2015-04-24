@@ -42,19 +42,16 @@ Height = ℕ
 data Type : Set where
   RB IR : Type
 
-Bsuc : Color → Height → Height
-Bsuc R h = h
-Bsuc B h = suc h
-
-cType : Color → Color → Color → Type
-cType R R _ = IR
-cType R _ R = IR
-cType _ _ _ = RB
+cType : Color → Color → Type
+cType B B = RB
+cType _ _ = IR
 
 data Tree (A : Set) : Color → Height → Type → Set where
   E : Tree A B 0 RB
-  T : ∀{cl cr h}(c : Color) → Tree A cl h RB → A → Tree A cr h RB
-        → Tree A c (Bsuc c h) (cType c cl cr)
+  R : ∀{cl cr h} → Tree A cl h RB → A → Tree A cr h RB
+        → Tree A R h (cType cl cr)
+  B : ∀{cl cr h} → Tree A cl h RB → A → Tree A cr h RB
+        → Tree A B (suc h) RB
   
 -- Simple Set Operations
 set : ∀{c h ty} → Set → Set
@@ -65,7 +62,11 @@ empty = E
 
 member : ∀{A c h ty}{{ord : Ord A}} → A → set {c}{h}{ty} A → Bool
 member x E = false
-member {{ord}} x (T _ a y b) with Ord._<_ ord x y
+member {{ord}} x (R a y b) with Ord._<_ ord x y
+... | LT = member x a
+... | EQ = true
+... | GT = member x b
+member {{ord}} x (B a y b) with Ord._<_ ord x y
 ... | LT = member x a
 ... | EQ = true
 ... | GT = member x b
@@ -74,12 +75,12 @@ member {{ord}} x (T _ a y b) with Ord._<_ ord x y
 balance : ∀{A cl cr h tyl tyr}
           → (c : Color) → set {cl}{h}{tyl} A → A → set {cr}{h}{tyr} A
             → set {c}{h}{RB} A
-balance B (T R (T R a x b) y c) z d = T R (T B a x b) y (T B c z d)
-balance B (T R a x (T R b y c)) z d = T R (T B a x b) y (T B c z d)
-balance B a x (T R (T R b y c) z d) = T R (T B a x b) y (T B c z d)
-balance B a x (T R b y (T R c z d)) = T R (T B a x b) y (T B c z d)
-balance B a x b = T B a x b
-balance R a x b = T R a x b
+balance B (R (R a x b) y c) z d = R (B a x b) y (B c z d)
+balance B (R a x (R b y c)) z d = R (B a x b) y (B c z d)
+balance B a x (R (R b y c) z d) = R (B a x b) y (B c z d)
+balance B a x (R b y (R c z d)) = R (B a x b) y (B c z d)
+balance B a x b = B a x b
+balance R a x b = R a x b
 
 -- insert : ∀{A}{{ord : Ord A}} → A → set A → set A
 -- insert {A} {{ord}} x s = blacken (ins s)
