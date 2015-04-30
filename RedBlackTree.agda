@@ -72,26 +72,20 @@ member {{ord}} x (B a y b) with Ord._<_ ord x y
 ... | GT = member x b
 
 -- Insertion
-balance : ∀{A cl cr h tyl tyr}
-          → (c : Color) → set {cl}{h}{tyl} A → A → set {cr}{h}{tyr} A
-            → set {c}{h}{RB} A
-balance B (R (R a x b) y c) z d = R (B a x b) y (B c z d)
-balance B (R a x (R b y c)) z d = R (B a x b) y (B c z d)
-balance B a x (R (R b y c) z d) = R (B a x b) y (B c z d)
-balance B a x (R b y (R c z d)) = R (B a x b) y (B c z d)
-balance B a x b = B a x b
-balance R a x b = R a x b
+-- balance has lots of problems with dependent pattern matching
+-- No separate balance because 'd need infinitely deep pattern for R
 
--- insert : ∀{A}{{ord : Ord A}} → A → set A → set A
--- insert {A} {{ord}} x s = blacken (ins s)
---   where
---     ins : set A → set A
---     ins E = T R E x E
---     ins (T color a y b) with Ord._<_ ord x y
---     ... | LT = balance color (ins a) y b
---     ... | EQ = T color a y b
---     ... | GT = balance color a y (ins b)
+insert : ∀{A c h h'}{{ord : Ord A}} → A → set {c}{h}{RB} A → set {B}{h'}{RB} A
+insert {A} {{ord}} x s = blacken (ins s)
+  where
+    ins : ∀{c c' h h' ty'} set {c}{h}{RB} A → set {c'}{h'}{ty'} A
+    ins t = {!!}
+    --ins (R a y b) with Ord._<_ ord x y
+    --... | _ = ?
+    --ins (B a y b) with Ord._<_ ord x y
+    --... | _ = ?
     
---     blacken : set A → set A
---     blacken E = E
---     blacken (T _ a y b) = T B a y b
+    blacken : ∀{c h ty} set {c}{h}{ty} A → set {B}{h}{RB} A
+    blacken t = {!!}
+    -- blacken (R a y b) = B a y b
+    -- blacken (B a y b) = B a y b
