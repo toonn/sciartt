@@ -15,7 +15,7 @@
 -}
 module RedBlackTree where
 
-open import Data.Bool hiding (if_then_else_) renaming (T to So; not to ¬)
+open import Data.Bool using (Bool; true; false) renaming (T to So; not to ¬)
 _⇒_ : Set → Set → Set
 P ⇒ T = {{p : P}} → T
 infixr 3 _⇒_
@@ -24,68 +24,69 @@ if_then_else_ : ∀{A} b → (So b ⇒ A) → (So (¬ b) ⇒ A) → A
 if true  then t else f = t
 if false then t else f = f
 
-open import Data.Nat hiding (_<_)
+open import Data.Nat hiding (_≤_; _<_; _≟_; compare)
+open import Level hiding (suc)
+open import Relation.Binary hiding (_⇒_)
 
-data Order : Set where
-  LT EQ GT : Order
+module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
 
-record Ord (A : Set) : Set where
-  field
-    _<_ : A → A → Order
-
-
-data Color : Set where
-  R B : Color
-
-Height = ℕ
-
-data Type : Set where
-  RB IR : Type
-
-cType : Color → Color → Type
-cType B B = RB
-cType _ _ = IR
-
-data Tree (A : Set) : Color → Height → Type → Set where
-  E : Tree A B 0 RB
-  R : ∀{cl cr h} → Tree A cl h RB → A → Tree A cr h RB
-        → Tree A R h (cType cl cr)
-  B : ∀{cl cr h} → Tree A cl h RB → A → Tree A cr h RB
-        → Tree A B (suc h) RB
+  open module sto = StrictTotalOrder order
+  A = StrictTotalOrder.Carrier order
   
--- Simple Set Operations
-set : ∀{c h ty} → Set → Set
-set {c}{h}{ty} A = Tree A c h ty
+  pattern LT = tri< _ _ _
+  pattern EQ = tri≈ _ _ _
+  pattern GT = tri> _ _ _
+  _≤_ = compare
 
-empty : ∀{A} → set A
-empty = E
+  
+  data Color : Set where
+    R B : Color
+  
+  _=ᶜ_ : Color → Color → Bool
+  R =ᶜ R = true
+  B =ᶜ B = true
+  _ =ᶜ _ = false
 
-member : ∀{A c h ty}{{ord : Ord A}} → A → set {c}{h}{ty} A → Bool
-member x E = false
-member {{ord}} x (R a y b) with Ord._<_ ord x y
-... | LT = member x a
-... | EQ = true
-... | GT = member x b
-member {{ord}} x (B a y b) with Ord._<_ ord x y
-... | LT = member x a
-... | EQ = true
-... | GT = member x b
+  Height = ℕ
 
--- Insertion
--- balance has lots of problems with dependent pattern matching
--- No separate balance because 'd need infinitely deep pattern for R
+  data Tree : Color → Height → Set a where
+    E : Tree B 0
+    R : ∀{h} → Tree B h → A → Tree B h → Tree R h
+    B : ∀{cl cr h} → Tree cl h → A → Tree cr h → Tree B (suc h)
 
-insert : ∀{A c h h'}{{ord : Ord A}} → A → set {c}{h}{RB} A → set {B}{h'}{RB} A
-insert {A} {{ord}} x s = blacken (ins s)
-  where
-    ins : ∀{c c' h h' ty'} set {c}{h}{RB} A → set {c'}{h'}{ty'} A
-    ins t = {!!}
-    --ins (R a y b) with Ord._<_ ord x y
-    --... | _ = ?
-    --ins (B a y b) with Ord._<_ ord x y
-    --... | _ = ?
-    
-    blacken : ∀{c h ty} set {c}{h}{ty} A → set {B}{h}{RB} A
-    blacken t = {!!}
-    -- blacken (R a y b) = B a y b
-    -- blacken (B a y b) = B a y b
+  postulate
+    -- Simple Set Operations
+    set : Set
+    empty : Set
+    member : Set
+
+  -- Insertion
+
+  -- If the element fits in the tree the height will not increase after
+  -- insertion.
+  fit : ∀{c h} → A → Tree c h → Bool
+  fit _ E = false
+  fit a (R _ b _) with a ≤ b
+  fit a (R _ _ _) | EQ = true
+  fit a (R E         _ _) | LT = false
+  fit a (R (B l b r) _ _) | LT = fit a (B l b r)
+  fit a (R _ _ E        ) | GT = false
+  fit a (R _ _ (B l b r)) | GT = fit a (B l b r)
+  fit a (B _ b _) with a ≤ b
+  fit a (B _ _ _) | EQ = true
+  fit a (B (R l b r) _ _) | LT = fit a (R l b r)
+  fit a (B _         _ _) | LT = true
+  fit a (B _ _ (R l b r)) | GT = fit a (R l b r)
+  fit a (B _ _ _        ) | GT = true
+
+  postulate
+    balance : Set
+
+  insert : ∀{c h} → (a : A) → (t : Tree c h)
+           → Tree B (if fit a t then h else suc h)
+  insert a t = blacken {!!}
+    where
+      blacken : ∀{c h} → Tree c h → Tree B (if B =ᶜ c then h else suc h)
+      blacken E         = E
+      blacken (R l b r) = B l b r
+      blacken (B l b r) = B l b r
