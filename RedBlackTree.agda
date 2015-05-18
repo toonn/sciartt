@@ -84,9 +84,23 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
 
   insert : ∀{c h} → (a : A) → (t : Tree c h)
            → Tree B (if fit a t then h else suc h)
-  insert a t = blacken {!!}
+  insert a t = blacken (ins a t)
     where
       blacken : ∀{c h} → Tree c h → Tree B (if B =ᶜ c then h else suc h)
       blacken E         = E
       blacken (R l b r) = B l b r
       blacken (B l b r) = B l b r
+
+      ins : ∀{c c' h} → (a : A) → (t : Tree c h)
+            → Tree c' (if fit a t then h else suc h)
+      ins a E = {!R E a E!}
+      --
+      ins a (R _ b _) with a ≤ b
+      ins _ (R l b r) | EQ = {!R l b r!}
+
+      ins a (R E b r) | LT = {!B (R E a E) b r!}
+      ins a (R (B l x l₁) b r) | LT = {!!}
+
+      ins a (R l b r) | GT = {!!}
+      --
+      ins a (B l b r) = {!!}
