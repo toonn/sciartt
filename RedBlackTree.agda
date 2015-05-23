@@ -54,6 +54,14 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
     R : ∀{h} → Tree B h → A → Tree B h → Tree R h
     B : ∀{cl cr h} → Tree cl h → A → Tree cr h → Tree B (suc h)
 
+  data IRTree : Height → Set a where
+    IRl : ∀{h} → Tree R h → A → Tree B h → IRTree h
+    IRr : ∀{h} → Tree B h → A → Tree R h → IRTree h
+
+  data OutOfBalance : Height → Set a where
+    _◂_◂_ : ∀{c h} → IRTree h → A → Tree c h → OutOfBalance h
+    _▸_▸_ : ∀{c h} → Tree c h → A → IRTree h → OutOfBalance h
+
   postulate
     -- Simple Set Operations
     set : Set
@@ -79,8 +87,11 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
   fit a (B _ _ (R l b r)) | GT = fit a (R l b r)
   fit a (B _ _ _        ) | GT = true
 
-  postulate
-    balance : Set
+  balance : ∀{h} → OutOfBalance h → Tree R (suc h)
+  balance (IRl (R a x b) y c ◂ z ◂ d) = R (B a x b) y (B c z d)
+  balance (IRr a x (R b y c) ◂ z ◂ d) = R (B a x b) y (B c z d)
+  balance (a ▸ x ▸ IRl (R b y c) z d) = R (B a x b) y (B c z d)
+  balance (a ▸ x ▸ IRr b y (R c z d)) = R (B a x b) y (B c z d)
 
   insert : ∀{c h} → (a : A) → (t : Tree c h)
            → Tree B (if fit a t then h else suc h)
@@ -91,16 +102,16 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
       blacken (R l b r) = B l b r
       blacken (B l b r) = B l b r
 
-      ins : ∀{c c' h} → (a : A) → (t : Tree c h)
+      ins : ∀{c h}{c'} → (a : A) → (t : Tree c h)
             → Tree c' (if fit a t then h else suc h)
       ins a E = {!R E a E!}
       --
       ins a (R _ b _) with a ≤ b
+      ins a (R l b r) | LT = {!balance R (ins a l) b r!}
       ins _ (R l b r) | EQ = {!R l b r!}
-
-      ins a (R E b r) | LT = {!B (R E a E) b r!}
-      ins a (R (B l x l₁) b r) | LT = {!!}
-
-      ins a (R l b r) | GT = {!!}
+      ins a (R l b r) | GT = {!balance R l b (ins a r)!}
       --
-      ins a (B l b r) = {!!}
+      ins a (B _ b _) with a ≤ b
+      ins a (B l b r) | LT = {!balance B (ins a l) b r!}
+      ins _ (B l b r) | EQ = {!B l b r!}
+      ins a (B l b r) | GT = {!balance B l b (ins a r)!}
