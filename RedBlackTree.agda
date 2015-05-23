@@ -62,6 +62,10 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
     _◂_◂_ : ∀{c h} → IRTree h → A → Tree c h → OutOfBalance h
     _▸_▸_ : ∀{c h} → Tree c h → A → IRTree h → OutOfBalance h
 
+  data Treeish : Color → Height → Set a where
+    RB : ∀{c h} → Tree c h → Treeish c h
+    IR : ∀{h} → IRTree h → Treeish R h
+
   postulate
     -- Simple Set Operations
     set : Set
@@ -97,21 +101,24 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
            → Tree B (if fit a t then h else suc h)
   insert a t = blacken (ins a t)
     where
-      blacken : ∀{c h} → Tree c h → Tree B (if B =ᶜ c then h else suc h)
-      blacken E         = E
-      blacken (R l b r) = B l b r
-      blacken (B l b r) = B l b r
+      blacken : ∀{c h} → Treeish c h → Tree B (if B =ᶜ c then h else suc h)
+      blacken (RB E)         = E
+      blacken (RB (R l b r)) = B l b r
+      blacken (RB (B l b r)) = B l b r
+      blacken (IR (IRl l b r)) = B l b r
+      blacken (IR (IRr l b r)) = B l b r
 
       ins : ∀{c h}{c'} → (a : A) → (t : Tree c h)
-            → Tree c' (if fit a t then h else suc h)
-      ins a E = {!R E a E!}
+            → Treeish c' h
+      ins a E = {!RB (R E a E)!}
       --
       ins a (R _ b _) with a ≤ b
-      ins a (R l b r) | LT = {!balance R (ins a l) b r!}
+      ins a (R l _ _) | LT with ins a l
+      ins a (R l b r) | LT | _ = {!R (ins a l) b r!}
       ins _ (R l b r) | EQ = {!R l b r!}
-      ins a (R l b r) | GT = {!balance R l b (ins a r)!}
+      ins a (R l b r) | GT = {!R l b (ins a r)!}
       --
       ins a (B _ b _) with a ≤ b
-      ins a (B l b r) | LT = {!balance B (ins a l) b r!}
+      ins a (B l b r) | LT = {!balance (ins a l) b r!}
       ins _ (B l b r) | EQ = {!B l b r!}
-      ins a (B l b r) | GT = {!balance B l b (ins a r)!}
+      ins a (B l b r) | GT = {!balance l b (ins a r)!}
