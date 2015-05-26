@@ -54,9 +54,13 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
     R : ∀{h} → Tree B h → A → Tree B h → Tree R h
     B : ∀{cl cr h} → Tree cl h → A → Tree cr h → Tree B (suc h)
 
+  data LorR : Color → Color → Set a where
+    LR : LorR R B
+    RR : LorR B R
+    
   data IRTree : Height → Set a where
-    IRl : ∀{h} → Tree R h → A → Tree B h → IRTree h
-    IRr : ∀{h} → Tree B h → A → Tree R h → IRTree h
+    IRl : ∀{h}{c c'} → {_ : LorR c c'} → Tree c h → A → Tree c' h → IRTree h
+    --IRr : ∀{h} → Tree B h → A → Tree R h → IRTree h
 
   data OutOfBalance : Height → Set a where
     _◂_◂_ : ∀{c h} → IRTree h → A → Tree c h → OutOfBalance h
@@ -93,9 +97,9 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
 
   balance : ∀{h} → OutOfBalance h → Tree R (suc h)
   balance (IRl (R a x b) y c ◂ z ◂ d) = R (B a x b) y (B c z d)
-  balance (IRr a x (R b y c) ◂ z ◂ d) = R (B a x b) y (B c z d)
+  balance (IRl a x (R b y c) ◂ z ◂ d) = R (B a x b) y (B c z d)
   balance (a ▸ x ▸ IRl (R b y c) z d) = R (B a x b) y (B c z d)
-  balance (a ▸ x ▸ IRr b y (R c z d)) = R (B a x b) y (B c z d)
+  balance (a ▸ x ▸ IRl b y (R c z d)) = R (B a x b) y (B c z d)
 
   insert : ∀{c h} → (a : A) → (t : Tree c h)
            → Tree B (if fit a t then h else suc h)
@@ -106,7 +110,7 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
       blacken (RB (R l b r)) = B l b r
       blacken (RB (B l b r)) = B l b r
       blacken (IR (IRl l b r)) = B l b r
-      blacken (IR (IRr l b r)) = B l b r
+      blacken (IR (IRl l b r)) = B l b r
 
       ins : ∀{c h}{c'} → (a : A) → (t : Tree c h)
             → Treeish c' h
