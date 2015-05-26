@@ -77,6 +77,7 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
   -- If the element fits in the tree the height will not increase after
   -- insertion.
   fit : ∀{c h} → A → Tree c h → Bool
+  -- red root will be blackened h->h+1
   fit _ E = false
   fit a (R _ b _) with a ≤ b
   fit a (R _ _ _) | EQ = false -- true
@@ -84,6 +85,7 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
   fit a (R (B l b r) _ _) | LT = false -- fit a (B l b r)
   fit a (R _ _ E        ) | GT = false
   fit a (R _ _ (B l b r)) | GT = false -- fit a (B l b r)
+  -- black root may become red after cascading balance
   fit a (B _ b _) with a ≤ b
   fit a (B _ _ _) | EQ = true
   fit a (B (R l b r) _ _) | LT = fit a (R l b r)
