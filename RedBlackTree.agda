@@ -16,17 +16,21 @@
 module RedBlackTree where
 
 open import Data.Bool using (Bool; true; false) renaming (T to So; not to ¬)
-_⇒_ : Set → Set → Set
+_⇒_ : ∀{ℓ₁ ℓ₂} → Set ℓ₁ → Set ℓ₂ → Set _
 P ⇒ T = {{p : P}} → T
 infixr 3 _⇒_
 
-if_then_else_ : ∀{A} b → (So b ⇒ A) → (So (¬ b) ⇒ A) → A
+if_then_else_ : ∀{ℓ}{A : Set ℓ} b → (So b ⇒ A) → (So (¬ b) ⇒ A) → A
 if true  then t else f = t
 if false then t else f = f
 
-open import Data.Nat hiding (_≤_; _<_; _≟_; compare)
+open import Data.Nat hiding (_<_; _≟_; compare) renaming (_≤_ to _≤ℕ_)
 open import Level hiding (suc)
 open import Relation.Binary hiding (_⇒_)
+open import Relation.Binary.PropositionalEquality using (_≡_)
+
+open import Data.Sum using (_⊎_) renaming (inj₁ to h+0; inj₂ to h+1)
+open import Data.Product using (Σ; Σ-syntax; _,_; proj₁; proj₂)
 
 module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
 
@@ -99,28 +103,39 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
   balance (a ▸ x ▸ IRl (R b y c) z d) = R (B a x b) y (B c z d)
   balance (a ▸ x ▸ IRr b y (R c z d)) = R (B a x b) y (B c z d)
 
-  insert : ∀{c h} → (a : A) → (t : Tree c h)
-           → Tree B (if fit a t then h else suc h)
-  insert a t = blacken (ins a t)
-    where
-      blacken : ∀{c h} → Treeish c h → Tree B (if B =ᶜ c then h else suc h)
-      blacken (RB E)         = E
-      blacken (RB (R l b r)) = B l b r
-      blacken (RB (B l b r)) = B l b r
-      blacken (IR (IRl l b r)) = B l b r
-      blacken (IR (IRr l b r)) = B l b r
+  blacken : ∀{h} → (t : Σ[ c ∈ Color ] Treeish c h) → Tree B h ⊎ Tree B (suc h)
+  blacken (.B , RB E)         = h+0 E
+  blacken (.R , RB (R l b r)) = h+1 (B l b r)
+  blacken (.B , RB (B l b r)) = h+0 (B l b r)
+  blacken (.R , IR (IRl l b r)) = h+1 (B l b r)
+  blacken (.R , IR (IRr l b r)) = h+1 (B l b r)
 
-      ins : ∀{c h}{c'} → (a : A) → (t : Tree c h)
-            → Treeish c' h
-      ins a E = {!RB (R E a E)!}
-      --
-      ins a (R _ b _) with a ≤ b
-      ins a (R l _ _) | LT with ins a l
-      ins a (R l b r) | LT | _ = {!R (ins a l) b r!}
-      ins _ (R l b r) | EQ = {!R l b r!}
-      ins a (R l b r) | GT = {!R l b (ins a r)!}
-      --
-      ins a (B _ b _) with a ≤ b
-      ins a (B l b r) | LT = {!balance (ins a l) b r!}
-      ins _ (B l b r) | EQ = {!B l b r!}
-      ins a (B l b r) | GT = {!balance l b (ins a r)!}
+  ins : ∀{c h} → (a : A) → (t : Tree c h)
+        → Σ[ c' ∈ Color ] (if c =ᶜ B then (Tree c' h) else (Treeish c' h))
+  ins a E = R , R E a E
+  --
+  ins a (R _ b _) with a ≤ b
+  ins a (R l _ _) | LT with ins a l
+  ins _ (R _ b r) | LT | R , t = R , IR (IRl t b r)
+  ins _ (R _ b r) | LT | B , t = R , (RB (R t b r))
+  ins _ (R l b r) | EQ = R , RB (R l b r)
+  ins a (R _ _ r) | GT with ins a r
+  ins _ (R l b _) | GT | R , t = R , (IR (IRr l b t))
+  ins _ (R l b _) | GT | B , t = R , (RB (R l b t))
+  --
+  ins a (B _ b _) with a ≤ b
+  ins a (B l _ _) | LT with ins a l
+  ins _ (B {R} _ b r) | LT | c , RB t = B , B t b r
+  ins _ (B {R} _ b r) | LT | .R , IR t = R , balance (t ◂ b ◂ r)
+  ins _ (B {B} _ b r) | LT | c , t = B , B t b r
+  ins _ (B l b r) | EQ = B , B l b r
+  ins a (B _ _ r) | GT with ins a r
+  ins _ (B {cr = R} l b _) | GT | c , RB t = B , B l b t
+  ins _ (B {cr = R} l b _) | GT | .R , IR t = R , balance (l ▸ b ▸ t)
+  ins _ (B {cr = B} l b _) | GT | c , t = B , B l b t
+
+  insert : ∀{c h} → (a : A) → (t : Tree c h)
+           → Tree B h ⊎ Tree B (suc h)
+  insert {R} a t = blacken (ins a t)
+  insert {B} a t with ins a t
+  ... | c , t' = blacken (c , RB t')
