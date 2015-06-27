@@ -24,10 +24,10 @@ if_then_else_ : ∀{ℓ}{A : Set ℓ} b → (So b ⇒ A) → (So (¬ b) ⇒ A) �
 if true  then t else f = t
 if false then t else f = f
 
-open import Data.Nat hiding (_<_; _≟_; compare) renaming (_≤_ to _≤ℕ_)
+open import Data.Nat hiding (_<_; _≤_; _≟_; compare)
+  renaming (decTotalOrder to ℕ-DTO)
 open import Level hiding (suc)
 open import Relation.Binary hiding (_⇒_)
-open import Relation.Binary.PropositionalEquality using (_≡_)
 
 open import Data.Sum using (_⊎_) renaming (inj₁ to h+0; inj₂ to h+1)
 open import Data.Product using (Σ; Σ-syntax; _,_; proj₁; proj₂)
@@ -35,7 +35,7 @@ open import Data.Product using (Σ; Σ-syntax; _,_; proj₁; proj₂)
 module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
 
   open module sto = StrictTotalOrder order
-  A = StrictTotalOrder.Carrier order
+  A = Carrier
   
   pattern LT = tri< _ _ _
   pattern EQ = tri≈ _ _ _
@@ -139,3 +139,33 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
   insert {R} a t = blacken (ins a t)
   insert {B} a t with ins a t
   ... | c , t' = blacken (c , RB t')
+
+-- Usage example
+
+open import Relation.Binary.Properties.DecTotalOrder ℕ-DTO
+ℕ-STO : StrictTotalOrder _ _ _
+ℕ-STO = strictTotalOrder
+
+open module rbtree = RBTree ℕ-STO
+
+t0 : Tree B 2
+t0 = B (R (B E 1 E) 2 (B (R E 3 E) 5 (R E 7 E)))
+       8
+       (B E 9 (R E 10 E))
+
+t1 : Tree B 3
+t1 = B (B (B E 1 E) 2 (B E 3 E))
+       4
+       (B (B E 5 (R E 7 E)) 8 (B E 9 (R E 10 E)))
+
+t2 : Tree B 3
+t2 = B (B (B E 1 E) 2 (B E 3 E))
+       4
+       (B (R (B E 5 E) 6 (B E 7 E)) 8 (B E 9 (R E 10 E)))
+
+open import Relation.Binary.PropositionalEquality
+t1≡t0+4 : h+1 t1 ≡ insert 4 t0
+t1≡t0+4 = refl
+
+t2≡t1+6 : h+0 t2 ≡ insert 6 t1
+t2≡t1+6 = refl
