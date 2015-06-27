@@ -70,12 +70,6 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
     RB : ∀{c h} → Tree c h → Treeish c h
     IR : ∀{h} → IRTree h → Treeish R h
 
-  postulate
-    -- Simple Set Operations
-    set : Set
-    empty : Set
-    member : Set
-
   -- Insertion
 
   -- If the element fits in the tree the height will not increase after
@@ -139,6 +133,28 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
   insert {R} a t = blacken (ins a t)
   insert {B} a t with ins a t
   ... | c , t' = blacken (c , RB t')
+
+
+  -- Simple Set Operations
+  set : ∀{c h} → Set _
+  set {c}{h} = Tree c h
+
+  empty : set
+  empty = E
+
+  member : ∀{c h} → (a : A) → set {c}{h} → Bool
+  member a E = false
+  member a (R l b r) with a ≤ b
+  ... | LT = member a l
+  ... | EQ = true
+  ... | GT = member a r
+  member a (B l b r) with a ≤ b
+  ... | LT = member a l
+  ... | EQ = true
+  ... | GT = member a r
+
+
+
 
 -- Usage example
 
