@@ -72,18 +72,37 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
 
   -- Insertion
 
+-- If the element fits in the tree the height will not increase after
+  -- insertion.
+  fit : ∀{c h} → A → Tree c h → Bool
+  -- red root will be blackened h->h+1
+  fit _ E = false
+  fit a (R _ b _) with a ≤ b
+  fit a (R _ _ _) | EQ = false -- true
+  fit a (R E         _ _) | LT = false
+  fit a (R (B l b r) _ _) | LT = false -- fit a (B l b r)
+  fit a (R _ _ E        ) | GT = false
+  fit a (R _ _ (B l b r)) | GT = false -- fit a (B l b r)
+  -- black root may become red after cascading balance
+  fit a (B _ b _) with a ≤ b
+  fit a (B _ _ _) | EQ = true
+  fit a (B (R l b r) _ _) | LT = fit a (R l b r)
+  fit a (B _         _ _) | LT = true
+  fit a (B _ _ (R l b r)) | GT = fit a (R l b r)
+  fit a (B _ _ _        ) | GT = true
+
   balance : ∀{h} → OutOfBalance h → Tree R (suc h)
   balance (IRl (R a x b) y c ◂ z ◂ d) = R (B a x b) y (B c z d)
   balance (IRr a x (R b y c) ◂ z ◂ d) = R (B a x b) y (B c z d)
   balance (a ▸ x ▸ IRl (R b y c) z d) = R (B a x b) y (B c z d)
   balance (a ▸ x ▸ IRr b y (R c z d)) = R (B a x b) y (B c z d)
 
-  blacken : ∀{h} → (t : Σ[ c ∈ Color ] Treeish c h) → Tree B h ⊎ Tree B (suc h)
-  blacken (.B , RB E)         = h+0 E
-  blacken (.R , RB (R l b r)) = h+1 (B l b r)
-  blacken (.B , RB (B l b r)) = h+0 (B l b r)
-  blacken (.R , IR (IRl l b r)) = h+1 (B l b r)
-  blacken (.R , IR (IRr l b r)) = h+1 (B l b r)
+  blacken : ∀{c h} → (Treeish c h) → (if c =ᶜ B then Tree B h else Tree B (suc h))
+  blacken (RB E) = E
+  blacken (RB (R l b r)) = (B l b r)
+  blacken (RB (B l b r)) = (B l b r)
+  blacken (IR (IRl l b r)) = (B l b r)
+  blacken (IR (IRr l b r)) = (B l b r)
 
   ins : ∀{c h} → (a : A) → (t : Tree c h)
         → Σ[ c' ∈ Color ] (if c =ᶜ B then (Tree c' h) else (Treeish c' h))
@@ -111,9 +130,12 @@ module RBTree {a ℓ}(order : StrictTotalOrder a ℓ ℓ) where
 
   insert : ∀{c h} → (a : A) → (t : Tree c h)
            → Tree B h ⊎ Tree B (suc h)
-  insert {R} a t = blacken (ins a t)
+  insert {R} a t with ins a t
+  ... | R , t' = h+1 (blacken t')
+  ... | B , t' = h+0 (blacken t')
   insert {B} a t with ins a t
-  ... | c , t' = blacken (c , RB t')
+  ... | R , t' = h+1 (blacken (RB t'))
+  ... | B , t' = h+0 (blacken (RB t'))
 
 
   -- Simple Set Operations
