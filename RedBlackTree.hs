@@ -41,20 +41,6 @@ data Treeish :: Color -> Nat -> * -> * where
 
 --Insertion
 
--- If the element fits in the tree the height will not increase after
--- insertion.
-fit :: Ord a => a -> Tree c h a -> Bool
--- red root will be blackened h->h+1
-fit _ ET = False
-fit _ (RT {}) = False
--- black root may become red after cascading balance
-fit a (BT l b r)
-  | a == b = True
-  | a < b , RT {} <- l = fit a l
-  | a < b = True
-  | a > b , RT {} <- r = fit a r
-  | a > b = True
-
 balance :: OutOfBalance h a -> Tree R (S h) a
 balance ((:<:) (IRl (RT a x b) y c) z d) = RT (BT a x b) y (BT c z d)
 balance ((:<:) (IRr a x (RT b y c)) z d) = RT (BT a x b) y (BT c z d)
