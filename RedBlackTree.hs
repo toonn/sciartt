@@ -62,4 +62,16 @@ balance ((:>:) a x (IRl (RT b y c) z d)) = RT (BT a x b) y (BT c z d)
 balance ((:>:) a x (IRr b y (RT c z d))) = RT (BT a x b) y (BT c z d)
 
 blacken :: Treeish c h a -> Either (Tree B h a) (Tree B (S h) a)
-blacken = undefined
+blacken (RB ET) = Left ET
+blacken (RB (RT l b r)) = Right (BT l b r)
+blacken (RB (BT l b r)) = Left (BT l b r)
+blacken (IR (IRl l b r)) = Right (BT l b r)
+blacken (IR (IRr l b r)) = Right (BT l b r)
+
+ins :: Ord a => a -> Tree c h a -> Treeish c' h a
+ins a ET = RB (RT ET a ET)
+--
+ins a (RT l b r)
+  | a < b = IR (IRl t b r)
+    where RB t = ins a l
+
