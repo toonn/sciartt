@@ -54,10 +54,46 @@ blacken (RB (BT l b r)) = Left (BT l b r)
 blacken (IR (IRl l b r)) = Right (BT l b r)
 blacken (IR (IRr l b r)) = Right (BT l b r)
 
-ins :: Ord a => a -> Tree c h a -> Treeish c' h a
-ins a ET = RB (RT ET a ET)
+-- Surprisingly difficult to find the right formulation
+-- (ins in a pattern guard)
+ins :: Ord a => a -> Tree c h a -> Either (Treeish R h a) (Treeish B h a)
+ins a ET = Left $ RB (RT ET a ET)
 --
 ins a (RT l b r)
-  | a < b = IR (IRl t b r)
-    where RB t = ins a l
+  | a < b , Left (RB t) <- ins a l = Left $ IR (IRl t b r)
+  | a < b , Right (RB t) <- ins a l = Left $ RB (RT t b r)
+  | a == b = Left $ RB (RT l b r)
+  | a > b , Left (RB t) <- ins a r = Left $ IR (IRr l b t)
+  | a > b , Right (RB t) <- ins a r = Left $ RB (RT l b t)
+--
+ins a (BT l b r)
+  | a < b , Left (RB t) <- ins a l = Right $ RB (BT t b r)
+  | a < b , Left (IR t) <- ins a l = Left $ RB (balance ((:<:) t b r))
+  | a < b , Right (RB t) <- ins a l = Right $ RB (BT t b r)
+  | a == b = Right $ RB (BT l b r)
+  | a > b , Left (RB t) <- ins a r = Right $ RB (BT l b t)
+  | a > b , Left (IR t) <- ins a r = Left $ RB (balance ((:>:) l b t))
+  | a > b , Right (RB t) <- ins a r = Right $ RB (BT l b t)
 
+insert :: Ord a => a -> Tree c h a -> Either (Tree B h a) (Tree B (S h) a)
+insert a t
+  | Left t' <- ins a t = blacken t'
+  | Right t' <- ins a t = blacken t'
+
+
+-- Simple Set operations
+type Set c h a = Tree c h a
+
+empty :: Set B Z a
+empty = ET
+
+member :: Ord a => a -> Set c h a -> Bool
+member _ ET = False
+member a (RT l b r)
+  | a < b = member a l
+  | a == b = True
+  | a > b = member a r
+member a (BT l b r)
+  | a < b = member a l
+  | a == b = True
+  | a > b = member a r
