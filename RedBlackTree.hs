@@ -27,6 +27,29 @@ data Tree :: Color -> Nat -> * -> * where
   RT :: Tree B  h a -> a -> Tree B  h a -> Tree R h a
   BT :: Tree cl h a -> a -> Tree cr h a -> Tree B (S h) a
 
+instance Eq a => Eq (Tree c h a) where
+  ET == ET = True
+  RT l a r == RT m b s = a == b && l == m && r == s
+  -- Black trees need further pattern matching because of cl and cr
+  BT ET a ET == BT ET b ET =
+    a == b 
+  BT ET a r@(RT {}) == BT ET b s@(RT {}) =
+    a == b && r == s
+  --
+  BT l@(RT {}) a ET == BT m@(RT {}) b ET =
+    a == b && l == m
+  BT l@(RT {}) a r@(RT {}) == BT m@(RT {}) b s@(RT {}) =
+    a == b && l == m && r == s
+  BT l@(RT {}) a r@(BT {}) == BT m@(RT {}) b s@(BT {}) =
+    a == b && l == m && r == s
+  --
+  BT l@(BT {}) a r@(RT {}) == BT m@(BT {}) b s@(RT {}) =
+    a == b && l == m && r == s
+  BT l@(BT {}) a r@(BT {}) == BT m@(BT {}) b s@(BT {}) =
+    a == b && l == m && r == s
+  _ == _ = False
+  
+
 data IRTree :: Nat -> * -> * where
   IRl :: Tree R h a -> a -> Tree B h a -> IRTree h a
   IRr :: Tree B h a -> a -> Tree R h a -> IRTree h a
@@ -82,6 +105,7 @@ insert a t
 
 
 -- Simple Set operations
+-- Partial Type Signatures might allow 'hiding' the color and height
 type Set c h a = Tree c h a
 
 empty :: Set B Z a
@@ -97,3 +121,31 @@ member a (BT l b r)
   | a < b = member a l
   | a == b = True
   | a > b = member a r
+
+
+
+-- Usage example
+t0 :: Tree B (S (S Z)) Integer
+t0 = BT (RT (BT ET 1 ET) 2 (BT (RT ET 3 ET) 5 (RT ET 7 ET)))
+        8
+        (BT ET 9 (RT ET 10 ET))
+
+t1 :: Tree B (S (S (S Z))) Integer
+t1 = BT (BT (BT ET 1 ET) 2 (BT ET 3 ET))
+        4
+        (BT (BT ET 5 (RT ET 7 ET)) 8 (BT ET 9 (RT ET 10 ET)))
+
+t2 :: Tree B (S (S (S Z))) Integer
+t2 = BT (BT (BT ET 1 ET) 2 (BT ET 3 ET))
+        4
+        (BT (RT (BT ET 5 ET) 6 (BT ET 7 ET)) 8 (BT ET 9 (RT ET 10 ET)))
+
+-- Would a proof with refl and equality require the entire tree at type
+-- level?
+t1_is_t0_plus_4 :: Bool
+t1_is_t0_plus_4 = t1 == t0_plus_4
+  where Right t0_plus_4 = insert 4 t0
+
+t2_is_t1_plus_6 :: Bool
+t2_is_t1_plus_6 = t2 == t1_plus_6
+  where Left t1_plus_6 = insert 6 t1
