@@ -35,7 +35,7 @@ Red-black trees in Agda
 -----------------------
 
 Het eerste voorbeeld is in Agda [#agda]_, een taal die begonnen is met een
-dependent typesysteem.
+dependent typesysteem.  
 Als we red-black trees willen maken hebben we een datatype nodig voor die bomen,
 Okasaki gebruik hier het volgende type dat redelijk typisch is voor haskell:
 
@@ -61,7 +61,7 @@ nemen.
 Zo zal het typesysteem ons een foutmelding geven wanneer we een ongeldige boom
 proberen op te stellen.
 
-Het type voor de bomen in Agda:
+Het type voor de bomen in Agda, A is het type van de elementen:
 
 .. code-block:: agda
 
@@ -145,7 +145,7 @@ hebben we nog één extra type nodig:
 
 Nu kunnen we de implementatie van de functies bespreken.
 De *balance* functie ziet er heel gelijkaardig uit dankzij een voorzichtige
-keuze van het argumenttype:
+formulering van het argumenttype:
 
 balance : ∀{h} → OutOfBalance h → Tree R (suc h)
 balance (IRl (R a x b) y c ◂ z ◂ d) = R (B a x b) y (B c z d)
@@ -153,13 +153,101 @@ balance (IRr a x (R b y c) ◂ z ◂ d) = R (B a x b) y (B c z d)
 balance (a ▸ x ▸ IRl (R b y c) z d) = R (B a x b) y (B c z d)
 balance (a ▸ x ▸ IRr b y (R c z d)) = R (B a x b) y (B c z d)
 
-Wat opvalt is dat de vijfde vergelijking weggevallen is de *catch-all* in de
-implementatie van Okasaki.
+Wat opvalt is dat de vijfde vergelijking weggevallen is,
+de *catch-all* in de implementatie van Okasaki.
 Omdat ons type nu zegt dat we een ongebalanceerde boom moeten hebben,
 is het niet mogelijk dat we een gebalanceerde boom krijgen die we gewoon
 terug kunnen geven.
 Dit zorgt er ook wel voor dat we op de plaats waar we *balance* oproepen,
 moeten zorgen dat dit ook echt nodig is.
+(Voordeel bij debugging omdat ge niet moet checken dat er in balance niets gebeurt)
+
+De hulpfuncties voor insert zijn wel een stuk langer geworden.
+*blacken* moet zowel een geldige als een ongeldige boom kunnen krijgen en de
+hoogte van een boom kan met één toenemen afhankelijk van de kleur van de wortel
+van het argument vandaar het conditionele returntype.
+
+.. code-block:: agda
+
+    blacken : ∀{c h} → (Treeish c h)
+            → (if c =ᶜ B then Tree B h else Tree B (suc h))
+    blacken (RB E) = E
+    blacken (RB (R l b r)) = (B l b r)
+    blacken (RB (B l b r)) = (B l b r)
+    blacken (IR (IRl l b r)) = (B l b r)
+    blacken (IR (IRr l b r)) = (B l b r)
+
+Omdat we de gevallen voor geldige en ongeldige, lege, zwarte en rode en links
+of rechts infrarode bomen apart moeten behandelen is deze functie een stuk
+langer dan de *one-liner* van Okasaki,
+dat is de prijs die we betalen voor precisie.
+
+De *ins* functie heeft een extra argument,
+namelijk het element dat ge-insert moet worden omdat het geen locale definitie
+is.
+Het probleem met een locale definitie in agda is dat die maar op één
+vergelijking van toepassing is.
+Het returntype is ook preciezer,
+*ins* geeft ofwel een geldige ofwel een ongeldige boom terug.
+Het returntype is een dependent pair omdat de kleur van het resultaat zowel
+rood als zwart kan zijn en dit werkt als een existentiële kwantor.
+
+.. code-block:: agda
+
+    ins : ∀{c h} → (a : A) → (t : Tree c h)
+        → Σ[ c' ∈ Color ] (if c =ᶜ B then (Tree c' h) else (Treeish c' h))
+    ins a E = R , R E a E  
+    --
+    ins a (R _ b _) with   a ≤ b
+    ins a (R l _ _) | LT   with ins a l
+    ins _ (R _ b r) | LT   | R , t = R , IR (IRl t b r)
+    ins _ (R _ b r) | LT   | B , t = R , (RB (R t b r))
+    ins _ (R l b r) | EQ   = R , RB (R l b r)
+    ins a (R _ _ r) | GT   with ins a r
+    ins _ (R l b _) | GT   | R , t = R , (IR (IRr l b t))
+    ins _ (R l b _) | GT   | B , t = R , (RB (R l b t))
+    --
+    ins a (B _ b _) with   a ≤ b
+    ins a (B l _ _) | LT   with ins a l
+    ins _ (B {R} _ b r) |   LT | c , RB t = B , B t b r
+    ins _ (B {R} _ b r) |   LT | .R , IR t = R , balance (t ◂ b ◂ r)
+    ins _ (B {B} _ b r) |   LT | c , t = B , B t b r
+    ins _ (B l b r) | EQ   = B , B l b r
+    ins a (B _ _ r) | GT   with ins a r
+    ins _ (B {cr = R} l b   _) | GT | c , RB t = B , B l b t
+    ins _ (B {cr = R} l b   _) | GT | .R , IR t = R , balance (l ▸ b ▸ t)
+    ins _ (B {cr = B} l b   _) | GT | c , t = B , B l b t
+
+De code is een stuk langer maar dat is vooral omdat we onderscheid moeten maken
+tussen de constructors voor *Tree*,
+of het resultaat een geldige of ongeldige boom is en of we balance wel of niet
+nodig hebben.
+
+Wat niet in de types is opgenomen is de, nogal belangrijke, invariant dat de
+waarden in een zoekboom gesorteerd moeten zijn...
+
+Agda heeft geen polymorfisme,
+wat in haskell met polymorfisme wordt gedaan,
+wordt in Agda gewoonlijk met impliciete typeargumenten bereikt.
+
+.. code-block:: haskell
+
+    id :: a -> a
+    id x = x
+
+.. code-block:: agda
+
+    id : {A : Set} → A → A
+    id x = x
+
+Om toe te laten dat de bomen met eender welke vergelijkbare elementen te
+gebruiken is,
+is de module geparametriseerd met een waarde van het type *StrictTotalOrder*.
+Zo'n waarde is een record met daarin ondermeer het type (*Carrier*) waarvoor
+de orde opgesteld is en een vergelijkingsfunctie (*compare*) die bepaald of
+a < b, a = b of a > b is.
+Door *A* gelijk te stellen aan *Carrier* en LT, EQ en GT te gebruiken voor
+de output van *compare* maken we de code toch nog gemakkelijk leesbaar.
 
 .. rubric:: Footnotes
 
