@@ -147,11 +147,13 @@ Nu kunnen we de implementatie van de functies bespreken.
 De *balance* functie ziet er heel gelijkaardig uit dankzij een voorzichtige
 formulering van het argumenttype:
 
-balance : ∀{h} → OutOfBalance h → Tree R (suc h)
-balance (IRl (R a x b) y c ◂ z ◂ d) = R (B a x b) y (B c z d)
-balance (IRr a x (R b y c) ◂ z ◂ d) = R (B a x b) y (B c z d)
-balance (a ▸ x ▸ IRl (R b y c) z d) = R (B a x b) y (B c z d)
-balance (a ▸ x ▸ IRr b y (R c z d)) = R (B a x b) y (B c z d)
+.. code-block:: agda
+
+    balance : ∀{h} → OutOfBalance h → Tree R (suc h)
+    balance (IRl (R a x b) y c ◂ z ◂ d) = R (B a x b) y (B c z d)
+    balance (IRr a x (R b y c) ◂ z ◂ d) = R (B a x b) y (B c z d)
+    balance (a ▸ x ▸ IRl (R b y c) z d) = R (B a x b) y (B c z d)
+    balance (a ▸ x ▸ IRr b y (R c z d)) = R (B a x b) y (B c z d)
 
 Wat opvalt is dat de vijfde vergelijking weggevallen is,
 de *catch-all* in de implementatie van Okasaki.
@@ -248,6 +250,8 @@ de orde opgesteld is en een vergelijkingsfunctie (*compare*) die bepaald of
 a < b, a = b of a > b is.
 Door *A* gelijk te stellen aan *Carrier* en LT, EQ en GT te gebruiken voor
 de output van *compare* maken we de code toch nog gemakkelijk leesbaar.
+
+
 
 .. rubric:: Footnotes
 
