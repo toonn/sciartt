@@ -1,7 +1,12 @@
+.. role:: agda(code)
+    :language: agda
+.. role:: haskell(code)
+    :language: haskell
+
 :author: Toon Nolten
 :date: 12-07-2015
 
-:abstract: Not concrete enough
+:abstract: Not concrete
 
 =================================
 Ask not what types can do for you
@@ -46,7 +51,7 @@ Okasaki gebruik hier het volgende type dat redelijk typisch is voor haskell:
 
 Dit type laat toe om elke geldige boom voor te stellen,
 jammer genoeg laat het ook toe om ongeldige bomen voor te stellen e.g.
-T R (T R E 1 E) 2 E, T B (T B E 1 E) 2 E.
+:haskell:`T R (T R E 1 E) 2 E, T B (T B E 1 E) 2 E`.
 Geldige bomen moeten voldoen aan twee invarianten:
 
     1. Geen enkele rode knoop heeft een rode ouder
@@ -61,7 +66,7 @@ nemen.
 Zo zal het typesysteem ons een foutmelding geven wanneer we een ongeldige boom
 proberen op te stellen.
 
-Het type voor de bomen in Agda, A is het type van de elementen:
+Het type voor de bomen in Agda, *A* is het type van de elementen:
 
 .. code-block:: agda
 
@@ -243,7 +248,7 @@ wordt in Agda gewoonlijk met impliciete typeargumenten bereikt.
     id x = x
 
 Om toe te laten dat de bomen met eender welke vergelijkbare elementen te
-gebruiken is,
+gebruiken zijn,
 is de module geparametriseerd met een waarde van het type *StrictTotalOrder*.
 Zo'n waarde is een record met daarin ondermeer het type (*Carrier*) waarvoor
 de orde opgesteld is en een vergelijkingsfunctie (*compare*) die bepaald of
@@ -252,6 +257,181 @@ Door *A* gelijk te stellen aan *Carrier* en LT, EQ en GT te gebruiken voor
 de output van *compare* maken we de code toch nog gemakkelijk leesbaar.
 
 
+Red-black trees in Haskell
+--------------------------
+
+Het tweede voorbeeld is geschreven in Haskell [#haskell]_,
+omdat Haskell met een aantal GHC [#ghc]_ extensies tussen een gewone getypeerde
+functionele programmeertaal en een dependently typed taal in zit.
+Wat belangrijk is om te beseffen is dat Haskell al een typesysteem heeft met
+types, kinds en een sort,
+wat natuurlijk moet blijven werken en daarbovenop complexe features heeft waar
+rekening mee gehouden moet worden,
+e.g. *GADTs* werken niet met *deriving* tenzij de *GADT* syntax in de eerste
+plaats overbodig was.
+(Voorbeeld over instance Eq in de code)
+Met *GADTs* kunnen we essentieel hetzelfde type implementeren voor de bomen als
+in Agda:
+
+.. code-block:: haskell
+
+    data Nat = Z | S Nat deriving (Show, Eq, Ord)
+
+    data Color = R | B deriving (Show, Eq, Ord)
+
+    data Tree :: Color -> Nat -> * -> * where
+      ET :: Tree B Z a
+      RT :: Tree B  h a -> a -> Tree B  h a -> Tree R h a
+      BT :: Tree cl h a -> a -> Tree cr h a -> Tree B (S h) a
+
+Het *Tree* type is de eerste *GADT* die we tegenkomen en hiervoor hebben we
+meteen twee extensies nodig, namelijk *GADTs* en *KindSignatures*.
+Een kind signature is als het ware een type signature voor een type.
+De *GADT* extensie laat ons toe om de constructors verschillende returntypes te
+geven,
+e.g. de *ET* constructor creëert een waarde van het polymorfe type *Tree B Z a*
+terwijl *RT* een waarde opstelt van het polymorfe type *Tree R h a*.
+In Haskell is er geen concept van een geparametriseerde module dus op die manier
+kunnen we niet aan het type van de elementen komen,
+in plaat daarvan maken we gebruik van polymorfisme.
+We hebben niet alleen het type nodig maar ook een functie om elementen van een
+type te vergelijken,
+hiervoor gebruiken we waar nodig de *Ord* constraint.
+In Haskell kan je niet zomaar kinds definiëren dus waar komen de kinds in de
+signature voor *Tree* vandaan?
+Die hebben we te danken aan datatype promotion uit de *DataKinds* extensie.
+Het type Nat wordt automatisch gepromoveerd to een kind met dezelfde naam,
+de constructors van dat type worden gepromoveerd tot types met als kind de
+nieuwgepromoveerde kind.
+Dit is nodig omdat dependent types draaien rond types die afhangen van waardes
+en in Haskell is er een strikte scheiding tussen waardes en types,
+om met typeniveau waardes te kunnen werken,
+moeten we dus onze waarde constructors spiegelen op typeniveau.
+De andere types zijn nagenoeg indentiek aan die uit Agda,
+Haskell heeft geen ondersteuning voor ternaire infix operatoren zoals voor
+*OutOfBalance* en we moeten steunen op polymorfisme voor het elementtype:
+
+.. code-block:: haskell
+
+    data IRTree :: Nat -> * -> * where
+      IRl :: Tree R h a -> a -> Tree B h a -> IRTree h a
+      IRr :: Tree B h a -> a -> Tree R h a -> IRTree h a
+
+    data OutOfBalance :: Nat -> * -> * where
+      (:<:) :: IRTree h a -> a -> Tree c h a -> OutOfBalance h a
+      (:>:) :: Tree c h a -> a -> IRTree h a -> OutOfBalance h a
+
+    data Treeish :: Color -> Nat -> * -> * where
+      RB :: Tree c h a -> Treeish c h a
+      IR :: IRTree h a -> Treeish R h a
+
+De *balance* functie is opnieuw nagenoeg indentiek:
+
+.. code-block:: haskell
+
+    balance :: OutOfBalance h a -> Tree R (S h) a
+    balance ((:<:) (IRl (RT a x b) y c) z d) = RT (BT a x b) y (BT c z d)
+    balance ((:<:) (IRr a x (RT b y c)) z d) = RT (BT a x b) y (BT c z d)
+    balance ((:>:) a x (IRl (RT b y c) z d)) = RT (BT a x b) y (BT c z d)
+    balance ((:>:) a x (IRr b y (RT c z d))) = RT (BT a x b) y (BT c z d)
+
+*blacken* daarentegen krijgt een ander returntype.
+Dezelfde techniek gebruiken als in Agda is zeer lastig in haskell omdat
+functies op typeniveau, i.e. type families, waardes op typeniveau nodig hebben
+die in dit geval komen van een andere functie op typeniveau,
+kortom dit wordt snel heel ingewikkeld.
+De gemakkelijke oplossing is om gewoon een disjuncte som van de returntypes
+terug te geven,
+in Haskell met *Either*:
+
+.. code-block:: haskell
+
+    blacken :: Treeish c h a -> Either (Tree B h a) (Tree B (S h) a)
+    blacken (RB ET) = Left ET
+    blacken (RB (RT l b r)) = Right (BT l b r)
+    blacken (RB (BT l b r)) = Left (BT l b r)
+    blacken (IR (IRl l b r)) = Right (BT l b r)
+    blacken (IR (IRr l b r)) = Right (BT l b r)
+
+Op deze manier verliezen we gedeeltelijk het determinisme over het returntype
+van *blacken* dus daar waar we *blacken* gebruiken moeten we bereid zijn om een
+boom van beide types te verwerken.
+In Haskell geeft dit geen probleem omdat we partiële functies kunnen definiëren,
+in Agda daarentegen zouden we dan ook de gevallen die eigenlijk niet kunnen
+voorkomen maar die het type niet uitsluit moeten implementeren,
+wat soms vervelend en altijd onnodig is.
+
+De *ins* functie heeft opnieuw een disjuncte som als type,
+deze keer omdat de *Color* existentiëel gekwantificeerd moet zijn,
+dit werkt dus wel voor een kleur maar zou niet werken voor bvb. natuurlijke
+getallen:
+(Existential types zouden kunnen helpen?)
+
+.. code-block:: haskell
+
+    ins :: Ord a => a -> Tree c h a -> Either (Treeish R h a) (Treeish B h a)
+    ins a ET = Left $ RB (RT ET a ET)
+    --
+    ins a (RT l b r)
+      | a < b , Left (RB t) <- ins a l = Left $ IR (IRl t b r)
+      | a < b , Right (RB t) <- ins a l = Left $ RB (RT t b r)
+      | a == b = Left $ RB (RT l b r)
+      | a > b , Left (RB t) <- ins a r = Left $ IR (IRr l b t)
+      | a > b , Right (RB t) <- ins a r = Left $ RB (RT l b t)
+    --
+    ins a (BT l b r)
+      | a < b , Left (RB t) <- ins a l = Right $ RB (BT t b r)
+      | a < b , Left (IR t) <- ins a l = Left $ RB (balance ((:<:) t b r))
+      | a < b , Right (RB t) <- ins a l = Right $ RB (BT t b r)
+      | a == b = Right $ RB (BT l b r)
+      | a > b , Left (RB t) <- ins a r = Right $ RB (BT l b t)
+      | a > b , Left (IR t) <- ins a r = Left $ RB (balance ((:>:) l b t))
+      | a > b , Right (RB t) <- ins a r = Right $ RB (BT l b t) 
+
+Hier zien we opnieuw iets wat mogelijk is omdat Haskell partiële functies
+toelaat:
+het returntype is altijd een *Treeish* ook al is een zwarte *Treeish* altijd
+een geldige boom.
+In Agda zou dit heel vervelend zijn,
+niet voor het returntype maar wel voor de functie die het resultaat moet
+verwerken.
+Agda zou in de recursieve oproepen naar *ins*, in bepaalde gevallen,
+niet kunnen uitsluiten dat een *IRTree* onmogelijk is en omdat Agda totale
+definities verwacht,
+moeten we dan een nutteloze waarde opstellen,
+wat alleen maar verward als we ooit terug naar de code moeten kijken.
+(geprobeerd in Treeisher.agda)
+De recursieve oproepen van *ins* moesten op een heel specifieke manier gebeuren,
+namelijk in een pattern guard (voorbeelden van hoe het niet werkte...)
+
+De *insert* functie is deze keer nog eenvoudiger,
+opnieuw moet de recursieve oproep in een pattern guard,
+de rest is voordehandliggend:
+
+.. code-block:: haskell
+
+    insert :: Ord a => a -> Tree c h a -> Either (Tree B h a) (Tree B (S h) a)
+    insert a t
+      | Left t' <- ins a t = blacken t'
+      | Right t' <- ins a t = blacken t'
+
+(Nog vermelden dat een eenvoudige typeclass instance definiëren, zoals voor Eq,
+nu verre van triviaal is omdat we de pattern matching een handje moeten
+toesteken omwille van de vrije constraints op kleur.)
+
+Conclusie
+---------
+
+Het is duidelijk dat dependent types expressiever zijn,
+ze laten toe om bepaalde invarianten statisch te verifiëren zonder dit voor
+alle invarianten op te leggen. (vb. okasaki zonder dependent types in agda)
+In de voorbeelden bvb. zijn de meest kenmerkende invarianten van red-black
+trees in de types opgenomen maar de belangrijkste niet,
+namelijk dat de elementen op volgorde moeten zitten.
+De technieken uit dependently typed talen zijn ook toepasbaar in Haskell,
+weliswaar in een meer beperkte vorm.
+De waarde van de statische verificatie moet dus nog beter afgewogen worden.
+
 
 .. rubric:: Footnotes
 
@@ -259,3 +439,9 @@ de output van *compare* maken we de code toch nog gemakkelijk leesbaar.
 .. [#agda] Agda is functionele programmeertaal met dependent types gebaseerd op
            martin-löf typetheorie.
 .. [#repl] Wikipedia?
+.. [#haskell] 
+.. [#ghc]
+.. [#gadts]
+.. [#kindsignatures]
+.. [#datakinds]
+.. [#typefamilies]
