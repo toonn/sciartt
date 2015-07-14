@@ -18,8 +18,6 @@ module RedBlackTree where
 
 data Nat = Z | S Nat deriving (Show, Eq, Ord)
 
-type Height = Nat
-
 data Color = R | B deriving (Show, Eq, Ord)
 
 data Tree :: Color -> Nat -> * -> * where
