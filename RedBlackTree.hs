@@ -13,7 +13,7 @@
      black nodes.
     (Empty nodes are considered black)
 -}
-{-# LANGUAGE GADTs, DataKinds, TypeFamilies #-}
+{-# LANGUAGE GADTs, DataKinds, KindSignatures #-}
 module RedBlackTree where
 
 data Nat = Z | S Nat deriving (Show, Eq, Ord)
