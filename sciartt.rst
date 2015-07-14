@@ -13,7 +13,7 @@ Ask not what types can do for you
 =================================
 
 Inleiding
----------
+=========
 
 Dependent types zijn heel krachtig maar ook heel nieuw en theoretisch
 Daardoor worden ze nog niet veel gebruikt,
@@ -37,7 +37,7 @@ op deze manier staat de code niet in de weg van het onderwerp terwijl de
 toepassing niet te ver afligt van een realistisch probleem.
 
 Red-black trees in Agda
------------------------
+=======================
 
 Het eerste voorbeeld is in Agda [#agda]_, een taal die begonnen is met een
 dependent typesysteem.  
@@ -258,7 +258,7 @@ de output van *compare* maken we de code toch nog gemakkelijk leesbaar.
 
 
 Red-black trees in Haskell
---------------------------
+==========================
 
 Het tweede voorbeeld is geschreven in Haskell [#haskell]_,
 omdat Haskell met een aantal GHC [#ghc]_ extensies tussen een gewone getypeerde
@@ -420,7 +420,7 @@ nu verre van triviaal is omdat we de pattern matching een handje moeten
 toesteken omwille van de vrije constraints op kleur.)
 
 Conclusie
----------
+=========
 
 Het is duidelijk dat dependent types expressiever zijn,
 ze laten toe om bepaalde invarianten statisch te verifiëren zonder dit voor
