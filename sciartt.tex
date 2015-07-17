@@ -23,6 +23,10 @@
 \usepackage{autofe}
 \usepackage{minted}
 
+% Missing unicode characters for Agda
+\usepackage{MnSymbol}
+\DeclareUnicodeCharacter{"2237}{$\squaredots$}
+
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
 
@@ -42,45 +46,45 @@
 \end{IEEEkeywords}
 
 
-* Je artikel mist nog een inleiding waarin je eerst uitlegt wat je
-juist gaat doen, waarom je het doet, wat de verwachte voor- en nadelen
-zijn etc. voor je effectief aan de technische content begint.
-Daarentegen heb je hier en daar tekst in je technische stukken die ik
-eerder in een inleiding zou verwachten, bijvoorbeeld de voordelen
-t.o.v. testsuites etc.
-* Ik zou aanraden om een korte recap te geven van (1) dependent types
-en (2) RB bomen, omdat je lezers waarschijnlijk niet vertrouwd zullen
-zijn hiermee.  Hou dit wel zeker kort genoeg, wegens de korte
-paginalimiet.
-* Je voegt best nog wat referenties toe overal, waar je lezers meer
-informatie kunnen vinden over onderwerpen: bijvoorbeeld Agda (Ulf
-Norell's thesis?), RB trees (ofwel de originele paper waarin deze
-voorgesteld zijn ofwel een goed cursusboek met uitleg en verdere
-referenties), een goede referentie naar de paper van Okasaki. Hiervoor
-gebruik je best bibtex; IEEE levert een bibtex stijl die je best
-gebruikt en je vindt op het internet wel een tutorial over bibtex,
-vermoed ik.
-* zorg er ook voor dat je alles uitlegt wat je doet.  Bijvoorbeeld leg
-je (tenzij ik het gemist heb) nergens uit dat IR in het woord IRTree
-slaat op een *infrarode* boom.
-* in je tekst bespreek je vaak je implementatie in vergelijking met
-die van Okasaki, maar als lezer van je artikel heb je die natuurlijk
-niet gezien.  Je mag je artikel niet schrijven alsof je lezers eerst
-nog een ander artikel moeten lezen voor ze aan jouw artikel kunnne
-beginnen.  Het moet "self-contained" zijn.  Ik zou voorstellen om je
-implementatie eerst gewoon uit te leggen en wanneer je ze helemaal
-besproken hebt een paragraaf te schrijven over de verschillen (in het
-algemeen) met Okasaki.
-* Ergens spreek je over Agda modules alsof iedereen weet hoe die
-werken!  Je moet proberen kort uit te leggen hoe dit werkt, want je
-lezers kennen deze niet. Idem dito voor nog een aantal concepten
-verder in je tekst.
-
-* Om het meer 'wetenschappelijk' te maken is het ook nodig om meer context te geven, waarom zijn red-black trees bijvoorbeeld een interessant voorbeeld om met dependent types te behandelen?
-* Ik zou ook proberen om de volgorde van je tekst wat aan te passen om de opbouw wat logischer te maken: misschien eerst een (korte) algemene overview van typesystemen en dependent types, daarna de Okasaki versie van red-black trees in Haskell, en daarna de dependently typed versie waarbij je duidelijk maakt wat dependent types opleveren.
-* Om het artikel niet te lang te maken zou ik enkel focusen op hetgeen dependent types opleveren (en alles wat je nodig hebt om dat te kunnen uitleggen), bvb de uitleg over modules en typeclasses kan je misschien weglaten uit de paper als het te lang wordt.
-* Voor het deel over Haskell zou ik nog duidelijker proberen te maken wat de status is van de extensies die je gebruikt: het zijn pogingen om dependently typed features te simuleren in een taal die daar niet voor bedoeld was.
-* In de conclusie zou het goed zijn om je resultaten nog wat meer te interpreteren, bijvoorbeeld door nog eens samen te vatten welke verschillen tussen Haskell en Agda je nu allemaal bent tegengekomen.
+%* Je artikel mist nog een inleiding waarin je eerst uitlegt wat je
+%juist gaat doen, waarom je het doet, wat de verwachte voor- en nadelen
+%zijn etc. voor je effectief aan de technische content begint.
+%Daarentegen heb je hier en daar tekst in je technische stukken die ik
+%eerder in een inleiding zou verwachten, bijvoorbeeld de voordelen
+%t.o.v. testsuites etc.
+%* Ik zou aanraden om een korte recap te geven van (1) dependent types
+%en (2) RB bomen, omdat je lezers waarschijnlijk niet vertrouwd zullen
+%zijn hiermee.  Hou dit wel zeker kort genoeg, wegens de korte
+%paginalimiet.
+%* Je voegt best nog wat referenties toe overal, waar je lezers meer
+%informatie kunnen vinden over onderwerpen: bijvoorbeeld Agda (Ulf
+%Norell's thesis?), RB trees (ofwel de originele paper waarin deze
+%voorgesteld zijn ofwel een goed cursusboek met uitleg en verdere
+%referenties), een goede referentie naar de paper van Okasaki. Hiervoor
+%gebruik je best bibtex; IEEE levert een bibtex stijl die je best
+%gebruikt en je vindt op het internet wel een tutorial over bibtex,
+%vermoed ik.
+%* zorg er ook voor dat je alles uitlegt wat je doet.  Bijvoorbeeld leg
+%je (tenzij ik het gemist heb) nergens uit dat IR in het woord IRTree
+%slaat op een *infrarode* boom.
+%* in je tekst bespreek je vaak je implementatie in vergelijking met
+%die van Okasaki, maar als lezer van je artikel heb je die natuurlijk
+%niet gezien.  Je mag je artikel niet schrijven alsof je lezers eerst
+%nog een ander artikel moeten lezen voor ze aan jouw artikel kunnne
+%beginnen.  Het moet "self-contained" zijn.  Ik zou voorstellen om je
+%implementatie eerst gewoon uit te leggen en wanneer je ze helemaal
+%besproken hebt een paragraaf te schrijven over de verschillen (in het
+%algemeen) met Okasaki.
+%* Ergens spreek je over Agda modules alsof iedereen weet hoe die
+%werken!  Je moet proberen kort uit te leggen hoe dit werkt, want je
+%lezers kennen deze niet. Idem dito voor nog een aantal concepten
+%verder in je tekst.
+%
+%* Om het meer 'wetenschappelijk' te maken is het ook nodig om meer context te geven, waarom zijn red-black trees bijvoorbeeld een interessant voorbeeld om met dependent types te behandelen?
+%* Ik zou ook proberen om de volgorde van je tekst wat aan te passen om de opbouw wat logischer te maken: misschien eerst een (korte) algemene overview van typesystemen en dependent types, daarna de Okasaki versie van red-black trees in Haskell, en daarna de dependently typed versie waarbij je duidelijk maakt wat dependent types opleveren.
+%* Om het artikel niet te lang te maken zou ik enkel focusen op hetgeen dependent types opleveren (en alles wat je nodig hebt om dat te kunnen uitleggen), bvb de uitleg over modules en typeclasses kan je misschien weglaten uit de paper als het te lang wordt.
+%* Voor het deel over Haskell zou ik nog duidelijker proberen te maken wat de status is van de extensies die je gebruikt: het zijn pogingen om dependently typed features te simuleren in een taal die daar niet voor bedoeld was.
+%* In de conclusie zou het goed zijn om je resultaten nog wat meer te interpreteren, bijvoorbeeld door nog eens samen te vatten welke verschillen tussen Haskell en Agda je nu allemaal bent tegengekomen.
 
 
 \section{Introduction}
@@ -94,18 +98,21 @@ Dependent types are more expressive than simple types because they can
 The canonical introductory example of a dependent type is the type for vectors
 (lists of fixed length):
 
-\begin{minted}{agda}
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{agda}
   data Vec (A : Set) : ℕ → Set where
     []  : Vec A zero
-    _∷_ : ∀ {n} (x : A) (xs : Vec A n) → Vec A (suc n)
+    _∷_ : ∀ {n} (x : A) (xs : Vec A n)
+          → Vec A (suc n)
 \end{minted}
 
 For someone with a background in functional programming languages this may be
-a good example of how dependent types are more expressive but someone with a
-background in imperative programming languages a list with a fixed length is
+a good example of how dependent types are more expressive but for someone with a
+background in imperative languages a list with a fixed length is
 just an array.
-Hopefully the running example in this paper, i.e. red-black trees, will serve
-to convince those yet unimpressed of the expressiveness of dependent types.
+Hopefully the running example in this paper, i.e. red-black trees
+\cite{rbtrees}, will serve to convince those yet unimpressed of the
+expressiveness of dependent types.
 
 \hfill July 15, 2015
 
@@ -116,33 +123,116 @@ Relying on color information (essentialy an extra bit of data per node) to
 maintain balance.
 The approximate balancing is good enough to guarantee $\mathcal{O}(\log{}n)$
 time complexity for search, insertion and deletion.
+Binary search trees are often used to implement more abstract datastructures
+such as sets and maps.
+Especially for ordered sets and maps this approach has advantages when compared
+to a hash table based implementation as search trees maintain order by
+definition.
+
+An elegant implementation of red-black trees in a functional programming
+language is that by Chris Okasaki \cite{okasaki}, in Haskell \cite{haskell},
+which is what the implementations in the examples are based on:
+
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{haskell}
+  data Color = R | B
+  data Tree elt =
+    E | T Color (Tree elt) elt (Tree elt)
+
+  type Set a = Tree a
+
+  empty :: Set elt
+  empty = E
+
+  member :: Ord elt => elt -> Set elt -> Bool
+  member x E = False
+  member x (T _ a y b) | x <  y = member x a
+                       | x == y = True
+                       | x >  y = member x b
+
+  -- originally without type signature
+  balance :: Color -> Tree elt -> elt
+             -> Tree elt -> Tree elt
+  balance B (T R (T R a x b) y c) z d =
+    T R (T B a x b) y (T B c z d)
+  balance B (T R a x (T R b y c)) z d =
+    T R (T B a x b) y (T B c z d)
+  balance B a x (T R (T R b y c) z d) =
+    T R (T B a x b) y (T B c z d)
+  balance B a x (T R b y (T R c z d)) =
+    T R (T B a x b) y (T B c z d)
+  balance color a x b = T color a x b
+
+  insert :: Ord elt => elt -> Set elt
+            -> Set elt
+  insert x s = makeBlack (ins s)
+    where
+      ins E = T R E x E
+      ins (T color a y b)
+        | x <  y = balance color (ins a) y b
+        | x == y = T color a y b
+        | x >  y = balance color a y (ins b)
+
+      makeBlack (T _ a y b) = T B a y b
+\end{minted}
+
+Okasaki based his implementation on a succinct formulation of the red-black tree
+invariants:
+\begin{description}
+  \item[Invariant 1] No red node has a red parent.
+  \item[Invariant 2] Every path from the root to an empty node contains the
+                     same number of black nodes.
+\end{description}
+While this implementation is short and simple enough for most people with some
+functional programming experience to understand, it is really important for
+datastructures to be correctly implemented.
+This is usually achieved by writing a suite of tests that exercise the
+implementation.
+Even though this is a proven methodology, there is undeniably some maintenance
+overhead involved: tests need to be written and update when the interface
+changes.
+Another disadvantage of this approach is that it is difficult to ensure that
+each and every possible case is tested, usually tests are aimed at corner cases
+that are identified by simply reasoning about the code.
+Randomized testing tools such as QuickCheck \cite{quickcheck} were created for
+precisely these reasons.
+In the examples that follow the expressiveness of dependent types is exploited
+to provide static verification of the correctness of the implementations.
 
 
-\section{Agda}
+\section{Red-Black Trees in Agda}
 
-\begin{minted}{Agda}
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{Agda}
   data Color : Set where
   R B : Color
   Height = ℕ
 
   data Tree : Color → Height → Set a where
   E : Tree B 0
-  R : ∀{h} → Tree B h → A → Tree B h → Tree R h
-  B : ∀{cl cr h} → Tree cl h → A → Tree cr h → Tree B (suc h)
+  R : ∀{h} → Tree B h → A → Tree B h
+      → Tree R h
+  B : ∀{cl cr h} → Tree cl h → A → Tree cr h
+      → Tree B (suc h)
 \end{minted}
 
 
-\section{Haskell}
+\section{Red-Black Trees in Haskell}
 
-\begin{minted}{haskell}
-  data Nat = Z | S Nat deriving (Show, Eq, Ord)
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{haskell}
+  data Nat = Z | S Nat
+    deriving (Show, Eq, Ord)
 
-  data Color = R | B deriving (Show, Eq, Ord)
+  data Color = R | B
+    deriving (Show, Eq, Ord)
 
   data Tree :: Color -> Nat -> * -> * where
   ET :: Tree B Z a
-  RT :: Tree B  h a -> a -> Tree B  h a -> Tree R h a
-  BT :: Tree cl h a -> a -> Tree cr h a -> Tree B (S h) a
+  RT :: Tree B  h a -> a -> Tree B  h a
+        -> Tree R h a
+  BT :: Tree cl h a -> a -> Tree cr h a
+        -> Tree B (S h) a
 \end{minted}
 
 
@@ -212,7 +302,7 @@ The authors would like to thank...
 %\IEEEtriggercmd{\enlargethispage{-5in}}
 
 \bibliographystyle{IEEEtran}
-\bibliography{IEEEabrv,./sciartt}
+\bibliography{./sciartt}
 
 \end{document}
 
