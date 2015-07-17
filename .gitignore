@@ -30,3 +30,7 @@ cabal.sandbox.config
 
 # vim
 tags
+*.swp
+
+# my latex setup
+_build
