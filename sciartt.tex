@@ -1,4 +1,4 @@
-\documentclass[journal]{../IEEEtemplate/IEEEtran}
+\documentclass[journal, retainorgcmds]{../IEEEtemplate/IEEEtran}
 \usepackage{cite}
 % \usepackage[pdftex]{graphicx}
 % \graphicspath{{../pdf/}{../jpeg/}}
@@ -26,6 +26,10 @@
 % Missing unicode characters for Agda
 \usepackage{MnSymbol}
 \DeclareUnicodeCharacter{"2237}{$\squaredots$}
+
+% More readable mintinline
+\newcommand{\iagda}[1]{\mintinline{agda}{#1}}
+\newcommand{\ihask}[1]{\mintinline{haskell}{#1}}
 
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
@@ -178,11 +182,11 @@ which is what the implementations in the examples are based on:
 
 Okasaki based his implementation on a succinct formulation of the red-black tree
 invariants:
-\begin{description}
+\begin{LaTeXdescription}
   \item[Invariant 1] No red node has a red parent.
   \item[Invariant 2] Every path from the root to an empty node contains the
                      same number of black nodes.
-\end{description}
+\end{LaTeXdescription}
 While this implementation is short and simple enough for most people with some
 functional programming experience to understand, it is really important for
 datastructures to be correctly implemented.
@@ -202,19 +206,48 @@ to provide static verification of the correctness of the implementations.
 
 \section{Red-Black Trees in Agda}
 
+No matter how elegant Okasaki's implementation, the \ihask{Tree} data type
+in no way prevents misuse, e.g. \ihask{T R (T R E 1 E) 2 E} and
+\ihask{T B (T B E 1 E) 2 E} are both valid values of the type \ihask{Tree}
+while they don't satisfy the invariants on red-black trees.
+Because of this we have to be careful when implementing a function that
+produces a \ihask{Tree}.
+Not to mention how we should handle invalid red-black trees?
+The easiest solution is not to think about it but this might cause a runtime
+error because somewhere we defined a function with the implicit assumption we
+would receive a valid red-black tree and it does not have a matching clause for
+an invalid tree.
+The other possible outcome is that it does not cause an error, every function
+an invalid tree passes through may have done something and all we see is the
+end result, this could be a debugging nightmare.
+The expressiveness of dependent types can ensure that only valid red-black
+trees can be created, in a way the \iagda{Tree} type will more accurately
+represent all possible red-black trees:
+
 %----------------------------------------%
-\begin{minted}[fontsize=\small]{Agda}
+\begin{minted}[fontsize=\small]{agda}
   data Color : Set where
-  R B : Color
+    R B : Color
   Height = ℕ
 
   data Tree : Color → Height → Set a where
-  E : Tree B 0
-  R : ∀{h} → Tree B h → A → Tree B h
-      → Tree R h
-  B : ∀{cl cr h} → Tree cl h → A → Tree cr h
-      → Tree B (suc h)
+    E : Tree B 0
+    R : ∀{h} → Tree B h → A → Tree B h
+        → Tree R h
+    B : ∀{cl cr h} → Tree cl h → A → Tree cr h
+        → Tree B (suc h)
 \end{minted}
+
+Instead of the algebraic data type (ADT) \cite{adt} in Haskell we use an
+inductive family \cite{indfam} to define the \iagda{Tree} type, this time
+including the \iagda{Color} (of the root node) and \iagda{Height} (number of
+black nodes on a path from the root to an empty node) in the type.
+This type enforces both red-black tree invariants: the constructor for a
+red node only allows children with a black root therefore preventing a red
+node from having a red parent which is Invariant 1, the constructors for red
+and black nodes demand their children to be of the same height thereby
+enforcing invariant 2.
+
 
 
 \section{Red-Black Trees in Haskell}
