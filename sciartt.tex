@@ -26,6 +26,8 @@
 % Missing unicode characters for Agda
 \usepackage{MnSymbol}
 \DeclareUnicodeCharacter{"2237}{$\squaredots$}
+\DeclareUnicodeCharacter{"25C2}{$\blacktriangleleft$}
+\DeclareUnicodeCharacter{"25B8}{$\blacktriangleright$}
 
 % More readable mintinline
 \newcommand{\iagda}[1]{\mintinline{agda}{#1}}
@@ -213,8 +215,8 @@ while they don't satisfy the invariants on red-black trees.
 Because of this we have to be careful when implementing a function that
 produces a \ihask{Tree}.
 Not to mention how we should handle invalid red-black trees?
-The easiest solution is not to think about it but this might cause a runtime
-error because somewhere we defined a function with the implicit assumption we
+The easiest solution is not to think about it but then a runtime error could
+occur because somewhere we defined a function with the implicit assumption it
 would receive a valid red-black tree and it does not have a matching clause for
 an invalid tree.
 The other possible outcome is that it does not cause an error, every function
@@ -244,10 +246,123 @@ including the \iagda{Color} (of the root node) and \iagda{Height} (number of
 black nodes on a path from the root to an empty node) in the type.
 This type enforces both red-black tree invariants: the constructor for a
 red node only allows children with a black root therefore preventing a red
-node from having a red parent which is Invariant 1, the constructors for red
-and black nodes demand their children to be of the same height thereby
-enforcing invariant 2.
+node from having a red parent which is invariant 1, the constructors for red
+and black nodes demand their children be of the same height thereby enforcing
+invariant 2.
+Now the type system guarantees that our functions always produce valid
+red-black trees.
+If we define a function that tries to create an invalid \iagda{Tree} the code
+will not type check.
+As a side effect type checking becomes part of writing code, instead of writing
+a large part of the program and then type checking at compile time.
+Agda integrates type checking into the editor which facilitates a more
+interactive workflow, alternately writing some code and type checking, making
+use of feedback from the type checker to correct the code.
 
+The biggest advantage of this stronger, more precise type is also somewhat of
+a disadvantage at the same time.
+Oftentimes an algorithm will temporarily violate invariants because it is
+easier to mess up and restore than do everything right immediately, especially
+when changes can cascade.
+Okasaki makes use of this in his \ihask{ins} function: \ihask{ins} may return
+an invalid \ihask{Tree} which is why the calls only occur as part of a call
+to \ihask{makeBlack} or \ihask{balance}.
+Because of how \ihask{ins} is implemented it may return a \ihask{Tree} with a
+red root that has one red child, this is also called an \emph{infrared} tree.
+Transforming an infrared tree into a valid tree can be done by blackening
+(just changing the color to black) the root node, however this increases the
+height of the tree by one.
+During insertion a height increase is undesirable because then the tree has to
+be rebalanced.
+Since the tree has to be rebalanced anyway, this is what happens in \ihask{ins}.
+\ihask{ins} recurses by deconstructing the node and then deciding which child
+the new value belongs to.
+If this child is infrared and the current node is black Okasaki's rebalancing
+algorithm restores the red-black tree invariants, this is where the elegance
+of his solution comes from.
+It is also the only way such an imbalance can occur because a child can only be
+infrared if it had a red root before the insertion which means the node that
+was just deconstructed is black so every time we need to rebalance there is a
+black node with an infrared child, of course this relies on the assumption that
+the original tree was a valid red-black tree.
+Since this kind of temporary violation of invariants is not allowed by the
+dependently typed implementation we need a new data type to represent infrared
+trees:
+
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{agda}
+  data IRTree : Height → Set a where
+    IRl : ∀{h} → Tree R h → A → Tree B h
+      → IRTree h
+    IRr : ∀{h} → Tree B h → A → Tree R h
+      → IRTree h
+\end{minted}
+
+Because the type for an infrared tree and a red-black tree are now distinct we
+cannot define \iagda{balance} as Okasaki did because the left tree can be
+infrared and the right red-black or the other way around.
+However we can easily mimick this behaviour using another data type:
+
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{agda}
+  data OutOfBalance : Height → Set a where
+    _◂_◂_ : ∀{c h} → IRTree h → A → Tree c h
+            → OutOfBalance h
+    _▸_▸_ : ∀{c h} → Tree c h → A → IRTree h
+            → OutOfBalance h
+\end{minted}
+
+Thanks to Agda's flexible mixfix syntax we can now write this haskell code
+\ihask{balance B infra b c} turns into this Agda code
+\iagda{balance (infra ◂ b ◂ c)}, notice also that we do not require the color
+argument we will come back to this.
+There's still one type missing, some of Okasaki's functions like \ihask{ins}
+can return either a red-black or an infrared tree.
+Because those are represented by two separate types we need an extra type to
+act as a disjoint sum:
+
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{agda}
+  data Treeish : Color → Height → Set a where
+    RB : ∀{c h} → Tree c h → Treeish c h
+    IR : ∀{h} → IRTree h → Treeish R h
+\end{minted}
+
+Being more precise takes more effort, one data type is replaced by four.
+The increase in precision goes hand in hand with an increase of verbosity this
+will also be apparent in the implementation of the functions.
+The first function to consider is balance because this is the main source of
+elegance:
+
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{agda}
+  balance : ∀{h} → OutOfBalance h → Tree R (suc h)
+  balance (IRl (R a x b) y c ◂ z ◂ d) =
+    R (B a x b) y (B c z d)
+  balance (IRr a x (R b y c) ◂ z ◂ d) =
+    R (B a x b) y (B c z d)
+  balance (a ▸ x ▸ IRl (R b y c) z d) =
+    R (B a x b) y (B c z d)
+  balance (a ▸ x ▸ IRr b y (R c z d)) =
+    R (B a x b) y (B c z d)
+\end{minted}
+
+This is fairly similar to Okasaki's implementation but there are subtle
+differences.
+The color argument is no longer necessary, it could be replaced by a pattern
+match on the constructor.
+The reason for this as well as the removal of the \emph{catch-all} clause is
+that the type no longer permits a valid red-black tree.
+In Okasaki's implementation, when \ihask{balance} was called with a valid
+red-black tree it would be returned unaltered, that way the function can be
+called indiscriminately.
+With the more restricted implementation it is necessary to ensure
+\iagda{balance} is only called when necessary.
+Often this requires more extensive case analysis but this can be a good thing
+because if there's a bug in Okasaki's implementation it can be harder to find
+since every \ihask{Tree} could go through \ihask{balance} which means we'd
+have to check that \ihask{balance} has the right behaviour even for trees that
+shouldn't even be rebalanced in the first place.
 
 
 \section{Red-Black Trees in Haskell}
