@@ -60,38 +60,8 @@
 %Daarentegen heb je hier en daar tekst in je technische stukken die ik
 %eerder in een inleiding zou verwachten, bijvoorbeeld de voordelen
 %t.o.v. testsuites etc.
-%* Ik zou aanraden om een korte recap te geven van (1) dependent types
-%en (2) RB bomen, omdat je lezers waarschijnlijk niet vertrouwd zullen
-%zijn hiermee.  Hou dit wel zeker kort genoeg, wegens de korte
-%paginalimiet.
-%* Je voegt best nog wat referenties toe overal, waar je lezers meer
-%informatie kunnen vinden over onderwerpen: bijvoorbeeld Agda (Ulf
-%Norell's thesis?), RB trees (ofwel de originele paper waarin deze
-%voorgesteld zijn ofwel een goed cursusboek met uitleg en verdere
-%referenties), een goede referentie naar de paper van Okasaki. Hiervoor
-%gebruik je best bibtex; IEEE levert een bibtex stijl die je best
-%gebruikt en je vindt op het internet wel een tutorial over bibtex,
-%vermoed ik.
-%* zorg er ook voor dat je alles uitlegt wat je doet.  Bijvoorbeeld leg
-%je (tenzij ik het gemist heb) nergens uit dat IR in het woord IRTree
-%slaat op een *infrarode* boom.
-%* in je tekst bespreek je vaak je implementatie in vergelijking met
-%die van Okasaki, maar als lezer van je artikel heb je die natuurlijk
-%niet gezien.  Je mag je artikel niet schrijven alsof je lezers eerst
-%nog een ander artikel moeten lezen voor ze aan jouw artikel kunnne
-%beginnen.  Het moet "self-contained" zijn.  Ik zou voorstellen om je
-%implementatie eerst gewoon uit te leggen en wanneer je ze helemaal
-%besproken hebt een paragraaf te schrijven over de verschillen (in het
-%algemeen) met Okasaki.
-%* Ergens spreek je over Agda modules alsof iedereen weet hoe die
-%werken!  Je moet proberen kort uit te leggen hoe dit werkt, want je
-%lezers kennen deze niet. Idem dito voor nog een aantal concepten
-%verder in je tekst.
 %
 %* Om het meer 'wetenschappelijk' te maken is het ook nodig om meer context te geven, waarom zijn red-black trees bijvoorbeeld een interessant voorbeeld om met dependent types te behandelen?
-%* Ik zou ook proberen om de volgorde van je tekst wat aan te passen om de opbouw wat logischer te maken: misschien eerst een (korte) algemene overview van typesystemen en dependent types, daarna de Okasaki versie van red-black trees in Haskell, en daarna de dependently typed versie waarbij je duidelijk maakt wat dependent types opleveren.
-%* Om het artikel niet te lang te maken zou ik enkel focusen op hetgeen dependent types opleveren (en alles wat je nodig hebt om dat te kunnen uitleggen), bvb de uitleg over modules en typeclasses kan je misschien weglaten uit de paper als het te lang wordt.
-%* Voor het deel over Haskell zou ik nog duidelijker proberen te maken wat de status is van de extensies die je gebruikt: het zijn pogingen om dependently typed features te simuleren in een taal die daar niet voor bedoeld was.
 %* In de conclusie zou het goed zijn om je resultaten nog wat meer te interpreteren, bijvoorbeeld door nog eens samen te vatten welke verschillen tussen Haskell en Agda je nu allemaal bent tegengekomen.
 
 
@@ -490,6 +460,24 @@ The cases for a red \iagda{Tree} or a black \iagda{Tree} are split up because
 
 \section{Red-Black Trees in Haskell}
 
+Haskell as a language is certainly not dependently typed but GHC \cite{ghc}
+has several extensions that try to retrofit similar features into the
+Hindley-Milner type system \cite{hindley}.
+One of Haskell's most important features is the type inference of its type
+system, this has to be preserved by whatever extension may be added.
+Dependent types in general do not allow for type inference, Agda for example
+has no type inference.
+This implies that Haskell will never be a fully dependently typed system.
+This also means that from time to time we will have to jump through hoops to
+achieve similar guarantees from the type system.
+In this section we will see how we can achieve most of the benefits of the
+implementation in the last section in a not quite dependently typed language.
+The code in this section relies on the following GHC extensions: GADTs,
+DataKinds and KindSignatures.
+These extensions are attempts to make the Haskell type system more expressive
+without giving up on type inference.
+The \ihask{Tree} data type is fairly similar:
+
 %----------------------------------------%
 \begin{minted}[fontsize=\small]{haskell}
   data Nat = Z | S Nat
@@ -505,6 +493,13 @@ The cases for a red \iagda{Tree} or a black \iagda{Tree} are split up because
   BT :: Tree cl h a -> a -> Tree cr h a
         -> Tree B (S h) a
 \end{minted}
+
+Other than syntax and constructor names, the most visible difference is the
+extra parameter for polymorphism.
+Agda's type system is not polymorphic and this problem was solved in a
+different way through Agda's module system but that would take us too far.
+DataKinds
+GADTs/KindSignature
 
 
 \section{Conclusion}
