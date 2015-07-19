@@ -18,6 +18,7 @@
 \usepackage{amssymb}
 \usepackage{bbm}
 \usepackage[greek,english]{babel}
+\usepackage{textgreek}
 \usepackage{ucs}
 \usepackage[utf8x]{inputenc}
 \usepackage{autofe}
@@ -28,6 +29,7 @@
 \DeclareUnicodeCharacter{"2237}{$\squaredots$}
 \DeclareUnicodeCharacter{"25C2}{$\blacktriangleleft$}
 \DeclareUnicodeCharacter{"25B8}{$\blacktriangleright$}
+\DeclareUnicodeCharacter{"1D9C}{$^{c}$}
 
 % More readable mintinline
 \newcommand{\iagda}[1]{\mintinline{agda}{#1}}
@@ -347,8 +349,8 @@ elegance:
     R (B a x b) y (B c z d)
 \end{minted}
 
-This is fairly similar to Okasaki's implementation but there are subtle
-differences.
+This is fairly similar to Okasaki's implementation, arguably it is more
+elegant, but there are subtle differences.
 The color argument is no longer necessary, it could be replaced by a pattern
 match on the constructor.
 The reason for this as well as the removal of the \emph{catch-all} clause is
@@ -363,6 +365,127 @@ because if there's a bug in Okasaki's implementation it can be harder to find
 since every \ihask{Tree} could go through \ihask{balance} which means we'd
 have to check that \ihask{balance} has the right behaviour even for trees that
 shouldn't even be rebalanced in the first place.
+
+The local functions Okasaki declared in \ihask{insert} have changed a lot more.
+They are not defined locally because we need multiple clauses for
+\iagda{insert}.
+The simplest of these is \iagda{blacken}, similar to Okasaki's
+\ihask{makeBlack}:
+
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{agda}
+  blacken : ∀{c h} → (Treeish c h)
+            → (if c =ᶜ B then Tree B h
+                         else Tree B (suc h))
+  blacken (RB E) = E
+  blacken (RB (R l b r)) = (B l b r)
+  blacken (RB (B l b r)) = (B l b r)
+  blacken (IR (IRl l b r)) = (B l b r)
+  blacken (IR (IRr l b r)) = (B l b r)
+\end{minted}
+
+All \iagda{blacken} does is take a tree and make the root node black.
+However, this function has to handle valid red-black trees as well as infrared
+trees (which corresponds to \iagda{Treeish}) and for each of these we have to
+consider each constructor because we need to access the values used to
+construct the root node.
+When a red root is colored black the \iagda{Height} of the \iagda{Tree}
+increases by one, that's why we have a return type that is conditional on the
+color of the original \iagda{Tree}.
+
+Because \iagda{ins} is no longer defined locally we need an explicit argument
+for the value to be inserted.
+\iagda{ins} takes a red-black \iagda{Tree} and returns a \iagda{Tree} if the
+given \iagda{Tree} was black or a possibly infrared \iagda{Treeish} if it was
+not.
+Either of these would have the same \iagda{Height} which can be guaranteed only
+because the function can return infrared trees.
+The color of the resulting tree is left undecided by using a dependent pair,
+this does mean we have to return a pair of a \iagda{Color} and a \iagda{Tree}.
+Okasaki's rebalancing algorithm can't balance infrared trees by themselves but
+it doesn't need to because an infrared tree can be turned into a red-black tree
+by coloring the root black:
+
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{agda}
+  ins : ∀{c h} → (a : A) → (t : Tree c h)
+        → Σ[ c' ∈ Color ]
+           (if c =ᶜ B then (Tree c' h)
+                      else (Treeish c' h))
+  ins a E = R , R E a E
+  --
+  ins a (R _ b _) with a ≤ b
+  ins a (R l _ _) | LT with ins a l
+  ins _ (R _ b r) | LT | R , t =
+    R , IR (IRl t b r)
+  ins _ (R _ b r) | LT | B , t =
+    R , (RB (R t b r))
+  ins _ (R l b r) | EQ = R , RB (R l b r)
+  ins a (R _ _ r) | GT with ins a r
+  ins _ (R l b _) | GT | R , t =
+    R , (IR (IRr l b t))
+  ins _ (R l b _) | GT | B , t =
+    R , (RB (R l b t))
+  --
+  ins a (B _ b _) with a ≤ b
+  ins a (B l _ _) | LT with ins a l
+  ins _ (B {R} _ b r) | LT | c , RB t =
+    B , B t b r
+  ins _ (B {R} _ b r) | LT | .R , IR t =
+    R , balance (t ◂ b ◂ r)
+  ins _ (B {B} _ b r) | LT | c , t =
+    B , B t b r
+  ins _ (B l b r) | EQ = B , B l b r
+  ins a (B _ _ r) | GT with ins a r
+  ins _ (B {cr = R} l b _) | GT | c , RB t =
+    B , B l b t
+  ins _ (B {cr = R} l b _) | GT | .R , IR t =
+    R , balance (l ▸ b ▸ t)
+  ins _ (B {cr = B} l b _) | GT | c , t =
+    B , B l b t
+\end{minted}
+
+\iagda{ins} is a lot longer in this implementation, mostly because we need to
+be more precise.
+Wether we return a red-black or an infrared tree and wether we should call
+\iagda{balance} or not, matters.
+The \iagda{with} construct enables pattern matching on intermediate results to
+decide which child a value belongs in and if the intermediate \iagda{Tree}
+needs to be rebalanced or not.
+
+The \iagda{insert} function has a more precise type but it is not as precise
+as possible, i.e. the resulting \iagda{Tree} cannot have just any \iagda{Height}
+but it is not uniquely defined either.
+Returning a value as part of a disjoint sum here is a concession, the problem
+with being more precise is that it is difficult to say in advance wether a
+given \iagda{Tree} will increase in \iagda{Height} upon inserting a given value.
+A function that decides this can easily be defined and used in the type of
+\iagda{insert} but Agda cannot reason about this function which gives problems
+because Agda only allows total functions.
+If such a function is part of the type Agda cannot infer when certain results
+of the function are impossible and this combined with the necessity to cover
+all cases that Agda can't rule out makes this very difficult.
+This can probably be remedied by providing Agda with an appropriate proof but
+this is a trade-off that has to be made, considering the added effort of a
+proof against a small increase in precision.
+In this case simplicity was chosen over precision:
+
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{agda}
+  insert : ∀{c h} → (a : A) → (t : Tree c h)
+           → Tree B h ⊎ Tree B (suc h)
+  insert {R} a t with ins a t
+  ... | R , t' = h+1 (blacken t')
+  ... | B , t' = h+0 (blacken t')
+  insert {B} a t with ins a t
+  ... | R , t' = h+1 (blacken (RB t'))
+  ... | B , t' = h+0 (blacken (RB t'))
+\end{minted}
+
+\iagda{insert} takes a value and a red-black \iagda{Tree} and returns a black
+\iagda{Tree} of the same \iagda{Height} or one level higher.
+The cases for a red \iagda{Tree} or a black \iagda{Tree} are split up because
+\iagda{ins} respectively returns a \iagda{Tree} or a red-black \iagda{Treeish}.
 
 
 \section{Red-Black Trees in Haskell}
@@ -386,49 +509,6 @@ shouldn't even be rebalanced in the first place.
 
 \section{Conclusion}
 The conclusion goes here.
-
-%\begin{figure}[!t]
-%\centering
-%\includegraphics[width=2.5in]{myfigure}
-% where an .eps filename suffix will be assumed under latex, 
-% and a .pdf suffix will be assumed for pdflatex; or what has been declared
-% via \DeclareGraphicsExtensions.
-%\caption{Simulation Results}
-%\label{fig_sim}
-%\end{figure}
-
-% Note that IEEE typically puts floats only at the top, even when this
-% results in a large percentage of a column being occupied by floats.
-
-
-%\begin{figure*}[!t]
-%\centerline{\subfloat[Case I]\includegraphics[width=2.5in]{subfigcase1}%
-%\label{fig_first_case}}
-%\hfil
-%\subfloat[Case II]{\includegraphics[width=2.5in]{subfigcase2}%
-%\label{fig_second_case}}}
-%\caption{Simulation results}
-%\label{fig_sim}
-%\end{figure*}
-
-%\begin{table}[!t]
-%% increase table row spacing, adjust to taste
-%\renewcommand{\arraystretch}{1.3}
-% if using array.sty, it might be a good idea to tweak the value of
-% \extrarowheight as needed to properly center the text within the cells
-%\caption{An Example of a Table}
-%\label{table_example}
-%\centering
-%% Some packages, such as MDW tools, offer better commands for making tables
-%% than the plain LaTeX2e tabular which is used here.
-%\begin{tabular}{|c||c|}
-%\hline
-%One & Two\\
-%\hline
-%Three & Four\\
-%\hline
-%\end{tabular}
-%\end{table}
 
 \appendices
 \section{Proof of the First Zonklar Equation}
