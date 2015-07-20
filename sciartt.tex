@@ -23,6 +23,7 @@
 \usepackage[utf8x]{inputenc}
 \usepackage{autofe}
 \usepackage{minted}
+\usepackage{fancyvrb}
 
 % Missing unicode characters for Agda
 \usepackage{MnSymbol}
@@ -472,8 +473,9 @@ This also means that from time to time we will have to jump through hoops to
 achieve similar guarantees from the type system.
 In this section we will see how we can achieve most of the benefits of the
 implementation in the last section in a not quite dependently typed language.
-The code in this section relies on the following GHC extensions: GADTs,
-DataKinds and KindSignatures.
+The code in this section relies on the following GHC extensions: GADTs
+\cite{gadts}, DataKinds \cite{datakinds} and KindSignatures
+\cite{kindsigs}.
 These extensions are attempts to make the Haskell type system more expressive
 without giving up on type inference.
 The \ihask{Tree} data type is fairly similar:
@@ -484,26 +486,200 @@ The \ihask{Tree} data type is fairly similar:
     deriving (Show, Eq, Ord)
 
   data Color = R | B
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq)
 
   data Tree :: Color -> Nat -> * -> * where
-  ET :: Tree B Z a
-  RT :: Tree B  h a -> a -> Tree B  h a
-        -> Tree R h a
-  BT :: Tree cl h a -> a -> Tree cr h a
-        -> Tree B (S h) a
+    ET :: Tree B Z a
+    RT :: Tree B  h a -> a -> Tree B  h a
+          -> Tree R h a
+    BT :: Tree cl h a -> a -> Tree cr h a
+          -> Tree B (S h) a
 \end{minted}
 
 Other than syntax and constructor names, the most visible difference is the
 extra parameter for polymorphism.
-Agda's type system is not polymorphic and this problem was solved in a
-different way through Agda's module system but that would take us too far.
-DataKinds
-GADTs/KindSignature
+Agda's type system is not polymorphic, implicit arguments allow a very
+similar approach.
+In the previous implementation this problem as well as making sure the elements
+that are put in trees can be compared, was solved in a different way
+through Agda's module system but that would take us too far.
+In Haskell we can use and \ihask{Ord} constraint when we need to be able to
+compare elements.
+The \ihask{Tree} data type is not an ordinary ADT but a generalised algebraic
+data type (GADT).
+A GADT enables the specification of the type signature of each constructor
+individually, this also permits the definition of constructors that result in a
+value of a more restricted type.
+There's also a kind \cite{kind} signature on \ihask{Tree}, just as a value has
+a type, a type in Haskell has a kind.
+Most types in Haskell have kind \ihask{*} and without extensions it is actually
+impossible to define new kinds.
+The kind signature for \ihask{Tree} indicates that \ihask{Tree} is a type, the
+resulting kind is \ihask{*}, that takes three parameters, i.e. one of kind
+\ihask{Color}, one of kind \ihask{Nat} and one of kind \ihask{*}.
+The \ihask{Color} and \ihask{Nat} kinds are not defined explicitly, they are
+created by data type promotion \cite{dtprom} through the DataKinds extension.
+The type \ihask{Color} is promoted to the kind \ihask{Color} and the
+constructors \ihask{R} and \ihask{B} are promoted to the types \ihask{R} and
+\ihask{B}, any of the promoted objects can be preceded by a single quote, e.g.
+\verb|'Color| if there is a possibility of ambiguity.
+
+Because the \ihask{Tree} type is more specific than in Okasaki's implementation
+we run into the same problem as in the last section and we need several
+additional types:
+
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{haskell}
+  data IRTree :: Nat -> * -> * where
+    IRl :: Tree R h a -> a -> Tree B h a
+           -> IRTree h a
+    IRr :: Tree B h a -> a -> Tree R h a
+           -> IRTree h a
+
+  data OutOfBalance :: Nat -> * -> * where
+    (:<:) :: IRTree h a -> a -> Tree c h a
+             -> OutOfBalance h a
+    (:>:) :: Tree c h a -> a -> IRTree h a
+             -> OutOfBalance h a
+
+  data Treeish :: Color -> Nat -> * -> * where
+    RB :: Tree c h a -> Treeish c h a
+    IR :: IRTree h a -> Treeish R h a
+\end{minted}
+
+Except for minor differences, i.e. these are GADTs instead of inductive
+families, polymorphism and not allowing mixfix notation, these types are the
+same as the ones in Agda.
+
+The \ihask{balance} function is also very similar:
+
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{haskell}
+  balance :: OutOfBalance h a -> Tree R (S h) a
+  balance ((:<:) (IRl (RT a x b) y c) z d) =
+    RT (BT a x b) y (BT c z d)
+  balance ((:<:) (IRr a x (RT b y c)) z d) =
+    RT (BT a x b) y (BT c z d)
+  balance ((:>:) a x (IRl (RT b y c) z d)) =
+    RT (BT a x b) y (BT c z d)
+  balance ((:>:) a x (IRr b y (RT c z d))) =
+    RT (BT a x b) y (BT c z d)
+\end{minted}
+
+\ihask{blacken} has a slightly less specific type.
+Functions that operate on the type level are a lot more restricted in Haskell,
+precisely because there is a type level, whereas in Agda all types are values.
+Type families \cite{typefam} are a GHC extension that provides something like a
+function at the type level but for simplicity's sake we will just relax the
+type:
+
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{haskell}
+  blacken :: Treeish c h a
+             -> Either (Tree B h a)
+                       (Tree B (S h) a)
+  blacken (RB ET) = Left ET
+  blacken (RB (RT l b r)) = Right (BT l b r)
+  blacken (RB (BT l b r)) = Left (BT l b r)
+  blacken (IR (IRl l b r)) = Right (BT l b r)
+  blacken (IR (IRr l b r)) = Right (BT l b r)
+\end{minted}
+
+The return type is now a disjoint sum, this means the result has to be
+explicitly tagged as having remained the same height or having increased by
+one.
+
+The \ihask{ins} function also has a slightly relaxed type in that we always
+return a \ihask{Treeish}.
+The disjoint sum with \ihask{Either} in this case replaces the existential
+quantification of the dependent pair in the Agda implementation.
+Of course a disjoint sum can only replace such a dependent pair if the type we
+want to quantify over has exactly two elements.
+Because this function needs to decide where an element belongs in the
+\ihask{Tree} there is an \ihask{Ord} constraint on the type variable
+representing the element type:
+
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{haskell}
+  ins :: Ord a => a -> Tree c h a
+         -> Either (Treeish R h a)
+                   (Treeish B h a)
+  ins a ET = Left $ RB (RT ET a ET)
+  --
+  ins a (RT l b r)
+    | a < b , Left (RB t) <- ins a l =
+      Left $ IR (IRl t b r)
+    | a < b , Right (RB t) <- ins a l =
+      Left $ RB (RT t b r)
+    | a == b = Left $ RB (RT l b r)
+    | a > b , Left (RB t) <- ins a r =
+      Left $ IR (IRr l b t)
+    | a > b , Right (RB t) <- ins a r =
+      Left $ RB (RT l b t)
+  --
+  ins a (BT l b r)
+    | a < b , Left (RB t) <- ins a l =
+      Right $ RB (BT t b r)
+    | a < b , Left (IR t) <- ins a l =
+      Left $ RB (balance ((:<:) t b r))
+    | a < b , Right (RB t) <- ins a l =
+      Right $ RB (BT t b r)
+    | a == b = Right $ RB (BT l b r)
+    | a > b , Left (RB t) <- ins a r =
+      Right $ RB (BT l b t)
+    | a > b , Left (IR t) <- ins a r =
+      Left $ RB (balance ((:>:) l b t))
+    | a > b , Right (RB t) <- ins a r =
+      Right $ RB (BT l b t)
+\end{minted}
+
+\ihask{ins} makes use of pattern guards \cite{patguard} to unwrap the
+\ihask{Tree} or \ihask{IRTree} from the tagged \ihask{Treeish} \ihask{ins} now
+invariably returns.
+The return type always being a \ihask{Treeish} would be problematic in Agda.
+Because Agda is a total language, if a function returns a \iagda{Treeish} and
+you want to pattern match on the result, you \emph{have} to provide patterns
+that cover each possible value of that type.
+In the case of \iagda{ins} this would mean that you'd have to cover infrared
+trees as a result of each of the recursive calls even though a call to
+\iagda{ins} on a \iagda{Tree} with a black root can never result in an infrared
+tree.
+What can we return as a result for a case that can not possibly occur?
+It doesn't really matter what it is as long as it's a valid value of the return
+type of the function.
+However, you can't extract the \iagda{Height} from the \iagda{Tree} because
+that information is in the type not the value.
+Creating a \iagda{Tree} of the right \iagda{Height} would have to be done
+recursively while deconstructing the \iagda{Tree}, which would require an
+entire new function just to cover a case that will never occur.
+In Agda it clearly makes more sense to restrict the type.
+Haskell is a partial language so we don't have to worry about cases we know
+will never occur, of course without the totality check we might miss cases that
+actually can occur.
+
+The \ihask{insert} function is simpler this time because \ihask{ins} will
+always return a \ihask{Treeish}.
+The type is the same as for the Agda implementation, glossing over the
+\ihask{Ord} constraint and polymorphism.
+Again a pattern guard unwraps the intermediate result before passing it on to
+\ihask{blacken}:
+
+%----------------------------------------%
+\begin{minted}[fontsize=\small]{haskell}
+  insert :: Ord a => a -> Tree c h a
+            -> Either (Tree B h a)
+                      (Tree B (S h) a)
+  insert a t
+    | Left t' <- ins a t = blacken t'
+    | Right t' <- ins a t = blacken t'
+\end{minted}
+
 
 
 \section{Conclusion}
 The conclusion goes here.
+
+TODO: title, abstract, conclusion, references, code in appendices(?)
 
 \appendices
 \section{Proof of the First Zonklar Equation}
