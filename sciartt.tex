@@ -1,18 +1,7 @@
 \documentclass[journal, retainorgcmds]{IEEEtran}
 \usepackage{cite}
-% \usepackage[pdftex]{graphicx}
-% \graphicspath{{../pdf/}{../jpeg/}}
-% \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
 \usepackage[cmex10]{amsmath}
 \usepackage{array}
-%\usepackage{mdwmath}
-%\usepackage{mdwtab}
-%\usepackage[tight,footnotesize]{subfigure}
-%\usepackage[caption=false]{caption}
-%\usepackage[font=footnotesize]{subfig}
-%\usepackage{fixltx2e}
-% LaTeX2e releases, the ordering of single and double column floats is not
-%\usepackage{stfloats}
 \usepackage{url}
 
 \usepackage{amssymb}
@@ -105,11 +94,11 @@ expressiveness of dependent types.
 \subsection{Red-Black Trees}
 
 Red-black trees are (approximately) balanced binary search trees.
-Relying on color information (essentialy an extra bit of data per node) to
+Relying on color information (essentially an extra bit of data per node) to
 maintain balance.
 The approximate balancing is good enough to guarantee $\mathcal{O}(\log{}n)$
 time complexity for search, insertion and deletion.
-Binary search trees are often used to implement more abstract datastructures
+Binary search trees are often used to implement more abstract data structures
 such as sets and maps.
 Especially for ordered sets and maps this approach has advantages when compared
 to a hash table based implementation as search trees maintain order by
@@ -171,11 +160,11 @@ invariants:
 \end{LaTeXdescription}
 While this implementation is short and simple enough for most people with some
 functional programming experience to understand, it is really important for
-datastructures to be correctly implemented.
+data structures to be correctly implemented.
 This is usually achieved by writing a suite of tests that exercise the
 implementation.
 Even though this is a proven methodology, there is undeniably some maintenance
-overhead involved: tests need to be written and update when the interface
+overhead involved: tests need to be written and updated when the interface
 changes.
 Another disadvantage of this approach is that it is difficult to ensure that
 each and every possible case is tested, usually tests are aimed at corner cases
@@ -425,7 +414,7 @@ by coloring the root black:
 
 \iagda{ins} is a lot longer in this implementation, mostly because we need to
 be more precise.
-Wether we return a red-black or an infrared tree and wether we should call
+Whether we return a red-black or an infrared tree and whether we should call
 \iagda{balance} or not, matters.
 The \iagda{with} construct enables pattern matching on intermediate results to
 decide which child a value belongs in and if the intermediate \iagda{Tree}
@@ -439,7 +428,7 @@ The constructors for the disjoint sum have been aliased to make it more obvious
 what the resulting type is, either the resulting \iagda{Tree} has the same
 \iagda{Height} (h+0) or the \iagda{Height} has increased by one (h+1).
 Returning a value as part of a disjoint sum here is a concession, the problem
-with being more precise is that it is difficult to say in advance wether a
+with being more precise is that it is difficult to say in advance whether a
 given \iagda{Tree} will increase in \iagda{Height} upon inserting a given value.
 A function that decides this can easily be defined and used in the type of
 \iagda{insert} but Agda cannot reason about this function which gives problems
@@ -688,9 +677,9 @@ Again a pattern guard unwraps the intermediate result before passing it on to
 
 
 \section{Conclusion}
-The conclusion goes here.
+Dependent types are expressive enough to allow for the specification of 
 
-TODO: title, conclusion, references, code in appendices(?)
+TODO: title, conclusion, references, code in appendices(?), acknowledgements
 
 \appendices
 \section{Proof of the First Zonklar Equation}
