@@ -1,4 +1,4 @@
-\documentclass[journal, retainorgcmds]{../IEEEtemplate/IEEEtran}
+\documentclass[journal, retainorgcmds]{IEEEtran}
 \usepackage{cite}
 % \usepackage[pdftex]{graphicx}
 % \graphicspath{{../pdf/}{../jpeg/}}
@@ -47,23 +47,30 @@
 
 
 \begin{abstract}
-  Not Concrete
+  Dependent types are a powerful construct founded in type theory.
+  Their expressiveness comes from the Curry-Howard correspondence \cite{cuho}.
+  Originally this was applied in proof assistants \cite{proofass}, a property
+  is represented as a type and its proof is a function of that type.
+  This also works the other way around, we can embed proofs in our programs and
+  in doing so prevent certain bugs from passing a static verification.
+  Several languages have dependent types, most of them are on a spectrum
+  between being a proof assistant and a programming language, Agda leans more
+  towards the latter.
+  Haskell with its Hindley-Milner type system is not dependently typed but
+  extensions to GHC have been developed that borrow concepts and fit them into
+  the existing system.
+  In this paper we look at how dependent types can be used to add some
+  verification to the implementation of red-black trees.
+  This is done once for a fully dependently typed language, i.e. Agda, and in
+  comparison in Haskell with the appropriate GHC extensions.
+  Although these implementations are longer than the original from Chris
+  Okasaki, they prevent us from violating some of the red-black tree invariants
+  which is exactly what they were supposed to accomplish.
 \end{abstract}
 
 \begin{IEEEkeywords}
   Dependent Types, Agda, Haskell, Red-Black Trees.
 \end{IEEEkeywords}
-
-
-%* Je artikel mist nog een inleiding waarin je eerst uitlegt wat je
-%juist gaat doen, waarom je het doet, wat de verwachte voor- en nadelen
-%zijn etc. voor je effectief aan de technische content begint.
-%Daarentegen heb je hier en daar tekst in je technische stukken die ik
-%eerder in een inleiding zou verwachten, bijvoorbeeld de voordelen
-%t.o.v. testsuites etc.
-%
-%* Om het meer 'wetenschappelijk' te maken is het ook nodig om meer context te geven, waarom zijn red-black trees bijvoorbeeld een interessant voorbeeld om met dependent types te behandelen?
-%* In de conclusie zou het goed zijn om je resultaten nog wat meer te interpreteren, bijvoorbeeld door nog eens samen te vatten welke verschillen tussen Haskell en Agda je nu allemaal bent tegengekomen.
 
 
 \section{Introduction}
@@ -86,9 +93,9 @@ The canonical introductory example of a dependent type is the type for vectors
 \end{minted}
 
 For someone with a background in functional programming languages this may be
-a good example of how dependent types are more expressive but for someone with a
-background in imperative languages a list with a fixed length is
-just an array.
+a good example of how dependent types are more expressive but for someone with
+a background in imperative languages a list with a fixed length is just an
+array.
 Hopefully the running example in this paper, i.e. red-black trees
 \cite{rbtrees}, will serve to convince those yet unimpressed of the
 expressiveness of dependent types.
@@ -424,9 +431,13 @@ The \iagda{with} construct enables pattern matching on intermediate results to
 decide which child a value belongs in and if the intermediate \iagda{Tree}
 needs to be rebalanced or not.
 
-The \iagda{insert} function has a more precise type but it is not as precise
-as possible, i.e. the resulting \iagda{Tree} cannot have just any \iagda{Height}
-but it is not uniquely defined either.
+The \iagda{insert} function has a more precise type than Okasaki's
+implementation but it is not as precise as possible, i.e. the resulting
+\iagda{Tree} cannot have just any \iagda{Height} but it is not uniquely defined
+either.
+The constructors for the disjoint sum have been aliased to make it more obvious
+what the resulting type is, either the resulting \iagda{Tree} has the same
+\iagda{Height} (h+0) or the \iagda{Height} has increased by one (h+1).
 Returning a value as part of a disjoint sum here is a concession, the problem
 with being more precise is that it is difficult to say in advance wether a
 given \iagda{Tree} will increase in \iagda{Height} upon inserting a given value.
@@ -461,8 +472,8 @@ The cases for a red \iagda{Tree} or a black \iagda{Tree} are split up because
 
 \section{Red-Black Trees in Haskell}
 
-Haskell as a language is certainly not dependently typed but GHC \cite{ghc}
-has several extensions that try to retrofit similar features into the
+Haskell as a language is certainly not dependently typed but GHC \cite{ghc} has
+several extensions that try to retrofit similar features into the
 Hindley-Milner type system \cite{hindley}.
 One of Haskell's most important features is the type inference of its type
 system, this has to be preserved by whatever extension may be added.
@@ -679,7 +690,7 @@ Again a pattern guard unwraps the intermediate result before passing it on to
 \section{Conclusion}
 The conclusion goes here.
 
-TODO: title, abstract, conclusion, references, code in appendices(?)
+TODO: title, conclusion, references, code in appendices(?)
 
 \appendices
 \section{Proof of the First Zonklar Equation}
