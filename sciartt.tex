@@ -675,9 +675,18 @@ Again a pattern guard unwraps the intermediate result before passing it on to
 \end{minted}
 
 
-
+$
 \section{Conclusion}
-Dependent types are expressive enough to allow for the specification of 
+Dependent types are expressive enough to allow for the specification of complex
+properties.
+These properties are then statically verified by the type system, thereby
+preventing bugs.
+Agda because of its design as a fully dependently typed language allows us to
+specify arbitrarily complex properties about our code without much friction.
+Haskell on the other hand does allow us to specify interesting properties but
+it is clear that the necessary functionality comes from extensions and is not
+as neatly accommodated by the language.
+
 
 TODO: title, conclusion, references, code in appendices(?), acknowledgements
 
