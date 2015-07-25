@@ -36,29 +36,33 @@
 
 
 \begin{abstract}
-  Dependent types are a powerful construct founded in type theory.
-  Their expressiveness comes from the Curry-Howard correspondence \cite{cuho}.
-  Originally this was applied in proof assistants \cite{proofass}, a property
-  is represented as a type and its proof is a function of that type.
-  This also works the other way around, we can embed proofs in our programs and
-  in doing so prevent certain bugs from passing a static verification.
-  Several languages have dependent types, most of them are on a spectrum
-  between being a proof assistant and a programming language, Agda leans more
-  towards the latter.
-  Haskell with its Hindley-Milner type system is not dependently typed but
-  extensions to GHC have been developed that borrow concepts and fit them into
-  the existing system.
+  Dependent types are an advanced feature of some type systems that allow
+  properties of programs to be embedded in their types.
+  Originally this was applied in proof assistants, a property is represented
+  as a type and its proof is a function of that type.
+  However this also works the other way around, we can embed proofs in our
+  programs and in doing so prevent certain bugs from passing a static
+  verification, i.e. type checking the program.
+  This correspondence between propositions and types is called the
+  Curry-Howard correspondence and is what gives dependent types their
+  expressiveness.
+  Several languages have such types, most of them are on a spectrum between
+  being a proof assistant and a programming language, Agda leans more towards
+  the latter.
+  In contrast, languages with a Hindley-Milner type system are not dependently
+  typed but in the case of Haskell, extensions to GHC have been developed that
+  borrow concepts and fit them into the existing system.
   In this paper we look at how dependent types can be used to add some
-  verification to the implementation of red-black trees.
+  verification to the implementation of red-black trees by Chris Okasaki.
   This is done once for a fully dependently typed language, i.e. Agda, and in
-  comparison in Haskell with the appropriate GHC extensions.
-  Although these implementations are longer than the original from Chris
-  Okasaki, they prevent us from violating some of the red-black tree invariants
-  which is exactly what they were supposed to accomplish.
+  comparison, in Haskell with the appropriate GHC extensions.
+  Although these implementations are longer than the original, they prevent us
+  from violating some of the red-black tree invariants which is exactly what
+  they were supposed to accomplish.
 \end{abstract}
 
 \begin{IEEEkeywords}
-  Dependent Types, Agda, Haskell, Red-Black Trees.
+  Dependent Types, Agda, Haskell, Red-Black Trees, Comparison.
 \end{IEEEkeywords}
 
 
@@ -633,6 +637,8 @@ representing the element type:
       Right $ RB (BT l b t)
 \end{minted}
 
+TODO: $
+
 \ihask{ins} makes use of pattern guards \cite{patguard} to unwrap the
 \ihask{Tree} or \ihask{IRTree} from the tagged \ihask{Treeish} \ihask{ins} now
 invariably returns.
@@ -675,7 +681,6 @@ Again a pattern guard unwraps the intermediate result before passing it on to
 \end{minted}
 
 
-$
 \section{Conclusion}
 Dependent types are expressive enough to allow for the specification of complex
 properties.
