@@ -522,7 +522,7 @@ The kind signature for \ihask{Tree} indicates that \ihask{Tree} is a type, the
 resulting kind is \ihask{*}, that takes three parameters, i.e. one of kind
 \ihask{Color}, one of kind \ihask{Nat} and one of kind \ihask{*}.
 The \ihask{Color} and \ihask{Nat} kinds are not defined explicitly, they are
-created by data type promotion \cite{dtprom} through the DataKinds extension.
+created by data type promotion through the DataKinds extension.
 The type \ihask{Color} is promoted to the kind \ihask{Color} and the
 constructors \ihask{R} and \ihask{B} are promoted to the types \ihask{R} and
 \ihask{B}, any of the promoted objects can be preceded by a single quote, e.g.
@@ -637,7 +637,7 @@ representing the element type:
       Right $ RB (BT l b t)
 \end{minted}
 
-TODO: $
+%TODO: $
 
 \ihask{ins} makes use of pattern guards \cite{patguard} to unwrap the
 \ihask{Tree} or \ihask{IRTree} from the tagged \ihask{Treeish} \ihask{ins} now
