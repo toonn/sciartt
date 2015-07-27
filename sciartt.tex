@@ -20,6 +20,7 @@
 \DeclareUnicodeCharacter{"25C2}{$\blacktriangleleft$}
 \DeclareUnicodeCharacter{"25B8}{$\blacktriangleright$}
 \DeclareUnicodeCharacter{"1D9C}{$^{c}$}
+\DeclareUnicodeCharacter{"225F}{$\stackrel{?}{=}$}
 
 % More readable mintinline
 \newcommand{\iagda}[1]{\mintinline{agda}{#1}}
@@ -30,7 +31,7 @@
 
 \begin{document}
 
-\title{Ask not what types can do for you}
+\title{Verified Red-Black Trees: A comparison between Agda and Haskell}
 \author{Toon~Nolten,\\ \texttt{<toon.nolten@student.kuleuven.be>}}%
 \maketitle
 
@@ -106,7 +107,7 @@ time complexity for search, insertion and deletion.
 Binary search trees are often used to implement more abstract data structures
 such as sets and maps.
 Especially for ordered sets and maps this approach has advantages when compared
-to a hash table based implementation as search trees maintain order by
+to a hash table based implementation, as search trees maintain order by
 definition.
 
 An elegant implementation of red-black trees in a functional programming
@@ -182,6 +183,8 @@ to provide static verification of the correctness of the implementations.
 
 \section{Red-Black Trees in Agda}
 
+The code for this section can be found in its entirety in appendix
+\ref{app:agda}.
 No matter how elegant Okasaki's implementation, the \ihask{Tree} data type
 in no way prevents misuse, e.g. \ihask{T R (T R E 1 E) 2 E} and
 \ihask{T B (T B E 1 E) 2 E} are both valid values of the type \ihask{Tree}
@@ -466,6 +469,8 @@ The cases for a red \iagda{Tree} or a black \iagda{Tree} are split up because
 
 \section{Red-Black Trees in Haskell}
 
+The code for this section can be found in its entirety in appendix
+\ref{app:haskell}.
 Haskell as a language is certainly not dependently typed but GHC \cite{ghc} has
 several extensions that try to retrofit similar features into the
 Hindley-Milner type system \cite{hindley}.
@@ -638,8 +643,6 @@ representing the element type:
       Right $ RB (BT l b t)
 \end{minted}
 
-TODO: $
-
 \ihask{ins} makes use of pattern guards \cite{patguard} to unwrap the
 \ihask{Tree} or \ihask{IRTree} from the tagged \ihask{Treeish} \ihask{ins} now
 invariably returns.
@@ -693,23 +696,27 @@ Haskell on the other hand does allow us to specify interesting properties but
 it is clear that the necessary functionality comes from extensions and is not
 as neatly accommodated by the language.
 
-
-TODO: title, conclusion, reference 11, code in appendices(?), acknowledgements
-
 \appendices
-\section{Proof of the First Zonklar Equation}
-Appendix one text goes here.
+\section{Agda code \label{app:agda}}
+Note that this symbol {\tiny\ensuremath{\hookrightarrow}} is
+used to indicate a line that was automatically wrapped to fit the narrow
+column format. Do not confuse this symbol with the arrows used to define
+function types.
+\inputminted[fontsize=\small,breaklines]{agda}{../RedBlackTree.agda}
+ 
+
+\section{Haskell code \label{app:haskell}}
+\inputminted[fontsize=\small,breaklines]{haskell}{../RedBlackTree.hs}
 
 % use section* for acknowledgement
 \section*{Acknowledgment}
-
-
-The authors would like to thank...
-
-
-% trigger a \newpage just before the given reference
-% number - used to balance the columns on the last page
-%\IEEEtriggeratref{8}
+I would like to thank my advisors, Jesper Cockx and Dominique Devriese, for
+their patient support when writing the code discussed in this paper and their
+apt suggestions for improvement of the article itself.
+% Promotor bedanken?
+Many thanks also to the wonderful people of the \#agda and \#haskell irc
+channels on the freenode network who've helped me better understand both
+languages.
 
 \bibliographystyle{IEEEtran}
 \bibliography{./sciartt}
