@@ -50,9 +50,10 @@
   being a proof assistant and a programming language, Agda leans more towards
   the latter.
   In contrast, languages with a Hindley-Milner type system are not dependently
-  typed but in the case of Haskell, extensions to GHC have been developed that
-  borrow concepts and fit them into the existing system.
-  In this paper we look at how dependent types can be used to add some
+  typed but in the case of Haskell, extensions to the Glasgow Haskell Compiler
+  have been developed that borrow concepts and fit them into the existing
+  system.
+  In this paper we demonstrate how dependent types can be used to add some
   verification to the implementation of red-black trees by Chris Okasaki.
   This is done once for a fully dependently typed language, i.e. Agda, and in
   comparison, in Haskell with the appropriate GHC extensions.
@@ -637,7 +638,7 @@ representing the element type:
       Right $ RB (BT l b t)
 \end{minted}
 
-%TODO: $
+TODO: $
 
 \ihask{ins} makes use of pattern guards \cite{patguard} to unwrap the
 \ihask{Tree} or \ihask{IRTree} from the tagged \ihask{Treeish} \ihask{ins} now
@@ -693,7 +694,7 @@ it is clear that the necessary functionality comes from extensions and is not
 as neatly accommodated by the language.
 
 
-TODO: title, conclusion, references, code in appendices(?), acknowledgements
+TODO: title, conclusion, reference 11, code in appendices(?), acknowledgements
 
 \appendices
 \section{Proof of the First Zonklar Equation}
@@ -708,11 +709,7 @@ The authors would like to thank...
 
 % trigger a \newpage just before the given reference
 % number - used to balance the columns on the last page
-% adjust value as needed - may need to be readjusted if
-% the document is modified later
 %\IEEEtriggeratref{8}
-% The "triggered" command can be changed if desired:
-%\IEEEtriggercmd{\enlargethispage{-5in}}
 
 \bibliographystyle{IEEEtran}
 \bibliography{./sciartt}
