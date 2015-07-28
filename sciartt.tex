@@ -32,7 +32,7 @@
 \begin{document}
 
 \title{Verified Red-Black Trees: A comparison between Agda and Haskell}
-\author{Toon~Nolten,\\ \texttt{<toon.nolten@student.kuleuven.be>}}%
+\author{Toon~Nolten\\ \texttt{<toon.nolten@student.kuleuven.be>}}%
 \maketitle
 
 
@@ -177,7 +177,7 @@ each and every possible case is tested, usually tests are aimed at corner cases
 that are identified by simply reasoning about the code.
 Randomized testing tools such as QuickCheck \cite{quickcheck} were created for
 precisely these reasons.
-In the examples that follow the expressiveness of dependent types is exploited
+In the examples that follow, the expressiveness of dependent types is exploited
 to provide static verification of the correctness of the implementations.
 
 
@@ -192,16 +192,16 @@ while they don't satisfy the invariants on red-black trees.
 Because of this we have to be careful when implementing a function that
 produces a \ihask{Tree}.
 Not to mention how we should handle invalid red-black trees?
-The easiest solution is not to think about it but then a runtime error could
+The easiest solution is not to think about it, but then a runtime error could
 occur because somewhere we defined a function with the implicit assumption it
 would receive a valid red-black tree and it does not have a matching clause for
 an invalid tree.
-The other possible outcome is that it does not cause an error, every function
+The other possible outcome is that it does not cause an error; every function
 an invalid tree passes through may have done something and all we see is the
 end result, this could be a debugging nightmare.
 The expressiveness of dependent types can ensure that only valid red-black
 trees can be created, in a way the \iagda{Tree} type will more accurately
-represent all possible red-black trees:
+represent all possible red-black trees, in Agda \cite{agda}:
 
 %----------------------------------------%
 \begin{minted}[fontsize=\small]{agda}
@@ -222,9 +222,9 @@ inductive family \cite{indfam} to define the \iagda{Tree} type, this time
 including the \iagda{Color} (of the root node) and \iagda{Height} (number of
 black nodes on a path from the root to an empty node) in the type.
 This type enforces both red-black tree invariants: the constructor for a
-red node only allows children with a black root therefore preventing a red
-node from having a red parent which is invariant 1, the constructors for red
-and black nodes demand their children be of the same height thereby enforcing
+red node only allows children with a black root, therefore preventing a red
+node from having a red parent which is invariant 1. The constructors for red
+and black nodes demand their children be of the same height, thereby enforcing
 invariant 2.
 Now the type system guarantees that our functions always produce valid
 red-black trees.
@@ -255,12 +255,12 @@ Since the tree has to be rebalanced anyway, this is what happens in \ihask{ins}.
 \ihask{ins} recurses by deconstructing the node and then deciding which child
 the new value belongs to.
 If this child is infrared and the current node is black Okasaki's rebalancing
-algorithm restores the red-black tree invariants, this is where the elegance
+algorithm restores the red-black tree invariants: this is where the elegance
 of his solution comes from.
-It is also the only way such an imbalance can occur because a child can only be
-infrared if it had a red root before the insertion which means the node that
-was just deconstructed is black so every time we need to rebalance there is a
-black node with an infrared child, of course this relies on the assumption that
+It is also the only way such an imbalance can occur, because a child can only be
+infrared, if it had a red root before the insertion which means the node that
+was just deconstructed is black. So every time we need to rebalance there is a
+black node with an infrared child; of course this relies on the assumption that
 the original tree was a valid red-black tree.
 Since this kind of temporary violation of invariants is not allowed by the
 dependently typed implementation we need a new data type to represent infrared
@@ -289,10 +289,11 @@ However we can easily mimick this behaviour using another data type:
             → OutOfBalance h
 \end{minted}
 
-Thanks to Agda's flexible mixfix syntax we can now write this haskell code
+Thanks to Agda's flexible mixfix syntax we can now write this Haskell code
 \ihask{balance B infra b c} turns into this Agda code
-\iagda{balance (infra ◂ b ◂ c)}, notice also that we do not require the color
-argument we will come back to this.
+\iagda{balance (infra ◂ b ◂ c)}.
+Notice also that we do not require the color argument, we will come back to
+this.
 There's still one type missing, some of Okasaki's functions like \ihask{ins}
 can return either a red-black or an infrared tree.
 Because those are represented by two separate types we need an extra type to
@@ -306,7 +307,7 @@ act as a disjoint sum:
 \end{minted}
 
 Being more precise takes more effort, one data type is replaced by four.
-The increase in precision goes hand in hand with an increase of verbosity this
+The increase in precision goes hand in hand with an increase of verbosity, this
 will also be apparent in the implementation of the functions.
 The first function to consider is balance because this is the main source of
 elegance:
@@ -327,7 +328,8 @@ elegance:
 This is fairly similar to Okasaki's implementation, arguably it is more
 elegant, but there are subtle differences.
 The color argument is no longer necessary, it could be replaced by a pattern
-match on the constructor.
+match on the constructor, but we only balance trees that are out of balance and
+they only produce red trees.
 The reason for this as well as the removal of the \emph{catch-all} clause is
 that the type no longer permits a valid red-black tree.
 In Okasaki's implementation, when \ihask{balance} was called with a valid
@@ -336,8 +338,8 @@ called indiscriminately.
 With the more restricted implementation it is necessary to ensure
 \iagda{balance} is only called when necessary.
 Often this requires more extensive case analysis but this can be a good thing
-because if there's a bug in Okasaki's implementation it can be harder to find
-since every \ihask{Tree} could go through \ihask{balance} which means we'd
+because if there's a bug in Okasaki's implementation, it can be harder to find
+since every \ihask{Tree} could go through \ihask{balance}, which means we'd
 have to check that \ihask{balance} has the right behaviour even for trees that
 shouldn't even be rebalanced in the first place.
 
@@ -430,7 +432,7 @@ needs to be rebalanced or not.
 
 The \iagda{insert} function has a more precise type than Okasaki's
 implementation but it is not as precise as possible, i.e. the resulting
-\iagda{Tree} cannot have just any \iagda{Height} but it is not uniquely defined
+\iagda{Tree} cannot have just any \iagda{Height}, but it is not uniquely defined
 either.
 The constructors for the disjoint sum have been aliased to make it more obvious
 what the resulting type is, either the resulting \iagda{Tree} has the same
@@ -443,8 +445,8 @@ A function that decides this can easily be defined and used in the type of
 because Agda only allows total functions.
 If such a function is part of the type Agda cannot infer when certain results
 of the function are impossible and this combined with the necessity to cover
-all cases that Agda can't rule out makes this very difficult.
-This can probably be remedied by providing Agda with an appropriate proof but
+all cases that Agda can't rule out, makes this very difficult.
+This can probably be remedied by providing Agda with an appropriate proof, but
 this is a trade-off that has to be made, considering the added effort of a
 proof against a small increase in precision.
 In this case simplicity was chosen over precision:
@@ -512,7 +514,7 @@ Agda's type system is not polymorphic, implicit arguments allow a very
 similar approach.
 In the previous implementation this problem as well as making sure the elements
 that are put in trees can be compared, was solved in a different way
-through Agda's module system but that would take us too far.
+through Agda's module system, but that would take us too far.
 In Haskell we can use and \ihask{Ord} constraint when we need to be able to
 compare elements.
 The \ihask{Tree} data type is not an ordinary ADT but a generalised algebraic
@@ -658,7 +660,7 @@ What can we return as a result for a case that can not possibly occur?
 It doesn't really matter what it is as long as it's a valid value of the return
 type of the function.
 However, you can't extract the \iagda{Height} from the \iagda{Tree} because
-that information is in the type not the value.
+that information is in the type, not the value.
 Creating a \iagda{Tree} of the right \iagda{Height} would have to be done
 recursively while deconstructing the \iagda{Tree}, which would require an
 entire new function just to cover a case that will never occur.
@@ -690,7 +692,7 @@ Dependent types are expressive enough to allow for the specification of complex
 properties.
 These properties are then statically verified by the type system, thereby
 preventing bugs.
-Agda because of its design as a fully dependently typed language allows us to
+Agda because of its design as a fully dependently typed language, allows us to
 specify arbitrarily complex properties about our code without much friction.
 Haskell on the other hand does allow us to specify interesting properties but
 it is clear that the necessary functionality comes from extensions and is not
