@@ -484,8 +484,8 @@ achieve similar guarantees from the type system.
 In this section we will see how we can achieve most of the benefits of the
 implementation in the last section in a not quite dependently typed language.
 The code in this section relies on the following GHC extensions: GADTs
-\cite{gadts}, DataKinds \cite{datakinds} and KindSignatures
-\cite{kindsigs}.
+\cite{gadts}, DataKinds \cite{datakinds} and KindSignatures which are analogous
+to type signatures at the kind level.
 These extensions are attempts to make the Haskell type system more expressive
 without giving up on type inference.
 The \ihask{Tree} data type is fairly similar:
@@ -713,7 +713,9 @@ function types.
 I would like to thank my advisors, Jesper Cockx and Dominique Devriese, for
 their patient support when writing the code discussed in this paper and their
 apt suggestions for improvement of the article itself.
-% Promotor bedanken?
+Furthermore I would like to thank professor Frank Piessens as my promotor
+without whom I would not have gotten involved in type theory and static
+program verification.
 Many thanks also to the wonderful people of the \#agda and \#haskell irc
 channels on the freenode network who've helped me better understand both
 languages.
