@@ -289,8 +289,8 @@ However we can easily mimick this behaviour using another data type:
             → OutOfBalance h
 \end{minted}
 
-Thanks to Agda's flexible mixfix syntax we can now write this Haskell code
-\ihask{balance B infra b c} turns into this Agda code
+Thanks to Agda's flexible mixfix syntax, this Haskell code
+\ihask{balance B infra b c}, turns into this Agda code:
 \iagda{balance (infra ◂ b ◂ c)}.
 Notice also that we do not require the color argument, we will come back to
 this.
